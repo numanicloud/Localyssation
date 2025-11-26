@@ -163,22 +163,7 @@ namespace Localyssation.Patches.ReplaceText
                     new CodeMatch(OpCodes.Ldarg_0),
                     new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(EnchanterManager), nameof(EnchanterManager._scriptEquipment))),
                     new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(ScriptableItem), nameof(ScriptableItem._itemName))),
-                    new CodeMatch(instr => 
-                    {
-                        var text = $" now scale off {type}!";
-						var result = instr.opcode == OpCodes.Ldstr && instr.operand.Equals(text);
-
-                        if (result)
-                        {
-                            Localyssation.logger.LogDebug($"Matched transmute message for {type}. operand={instr.operand}");
-                        }
-                        else
-                        {
-                            Localyssation.logger.LogDebug($"Did not match transmute message for {type}. operand={instr.operand}");
-						}
-
-                        return result;
-					}),
+                    new CodeMatch(OpCodes.Ldstr, $" now scale off {type}!"),
                     TranspilerHelper.STRING_CONCAT
                 };
         }
