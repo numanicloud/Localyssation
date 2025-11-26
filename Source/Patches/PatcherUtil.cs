@@ -1,9 +1,13 @@
 ﻿using HarmonyLib;
+using HarmonyLib.Tools;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Localyssation.Patches
 {
@@ -159,7 +163,24 @@ namespace Localyssation.Patches
 
     public static class TranspilerHelper
     {
-        public static readonly CodeMatch STRING_CONCAT = new CodeMatch(instr => instr.opcode == OpCodes.Call && instr.operand is MethodInfo method && method.DeclaringType == typeof(string) && method.Name == "Concat");
+        public static readonly CodeMatch STRING_CONCAT = new CodeMatch(instr =>
+		{
+			var result = instr.opcode == OpCodes.Call
+                && instr.operand is MethodInfo method
+                && method.DeclaringType == typeof(string)
+                && method.Name == "Concat";
+
+            if (result)
+            {
+                UnityEngine.Debug.Log($"Concat method check passed. {instr}");
+            }
+            else
+            {
+                UnityEngine.Debug.Log($"Concat method check failed. {instr}");
+			}
+
+			return result;
+		});
         public static MethodInfo GenerateTargetMethod(TargetInnerMethod target)
         {
             try
@@ -176,11 +197,46 @@ namespace Localyssation.Patches
 
         public static IEnumerable<CodeInstruction> MatchAndReplace(IEnumerable<CodeInstruction> instructions, CodeMatch[] matches, CodeInstruction[] replacement)
         {
-            return new CodeMatcher(instructions)
-                .MatchForward(false, matches)
-                .RemoveInstructions(matches.Length)
-                .Insert(replacement)
-                .Instructions();
+			try
+            {
+                /*
+                UnityEngine.Debug.Log("instructions");
+				foreach (var instruction in instructions)
+                {
+                    var opCode = instruction.opcode;
+					UnityEngine.Debug.Log(instruction.ToString());
+				}
+
+                UnityEngine.Debug.Log("matches");
+				foreach (var match in matches)
+                {
+                    UnityEngine.Debug.Log(match.ToString());
+				}
+				//*/
+
+                for (int i = 0; i < matches.Length; i++)
+				{
+					var temp = new CodeMatcher(instructions)
+						.MatchForward(false, matches.Take(i + 1).ToArray());
+					UnityEngine.Debug.Log($"Pre-Match {i + 1}: Pos={temp.Pos}, Length={temp.Length}");
+				}
+
+				var p1 = new CodeMatcher(instructions)
+                    .MatchForward(false, matches);
+
+                UnityEngine.Debug.Log($"Matched Count={p1.Length}, Pos={p1.Pos}");
+
+                return p1.RemoveInstructions(matches.Length)
+                    .Insert(replacement)
+                    .Instructions();
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException(
+                    $"MatchAndReplace failed. " +
+                    $"matches=[{string.Join(",", matches.Select(x => x.name))}], " +
+                    $"replacements.Count={instructions.Count()}", e);
+            }
         }
 
         public static CodeMatch MatchMethodCall(MethodInfo method, OpCode? opcode = null)
