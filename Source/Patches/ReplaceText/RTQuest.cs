@@ -186,18 +186,6 @@ namespace Localyssation.Patches.ReplaceText
             }
         }
 
-
-        [HarmonyPatch(typeof(QuestSelectionManager), nameof(QuestSelectionManager.Handle_QuestSelectionConditions))]
-        [HarmonyTranspiler]
-        public static IEnumerable<CodeInstruction> QuestSelectionManager_Handle_QuestSelectionConditions_Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            return RTUtil.SimpleStringReplaceTranspiler(instructions, new Dictionary<string, string>() {
-                { "Quest Incomplete", "QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_INCOMPLETE" },
-                { "Complete Quest", "QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_TURN_IN" },
-                { "Select a Quest", "QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_UNSELECTED" },
-            });
-        }
-
         [HarmonyPatch(typeof(QuestSelectionManager), nameof(QuestSelectionManager.Select_QuestEntry))]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> QuestSelectionManager_Select_QuestEntry_Transpiler(IEnumerable<CodeInstruction> instructions)

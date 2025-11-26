@@ -46,18 +46,6 @@ namespace Localyssation.Patches.ReplaceText
                 .Unwrap();
         }
 
-        [HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.OnClick_RoomChannel))]
-        [HarmonyTranspiler]
-        private static IEnumerable<CodeInstruction> ChatBehaviour__OnClick_RoomChannel__Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            return RTUtil.Wrap(instructions)
-                .ReplaceStrings(new[] {
-                    I18nKeys.ChatBehaviour.DISABLE_ROOM_CHANNEL_MESSAGE,
-                    I18nKeys.ChatBehaviour.ENABLE_ROOM_CHANNEL_MESSAGE
-                })
-                .Unwrap();
-        }
-
         [HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.On_ChannelSwitch))]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> ChatBehaviour__On_ChannelSwitch__Transpiler(IEnumerable<CodeInstruction> instructions)
