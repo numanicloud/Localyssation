@@ -122,11 +122,11 @@ namespace Localyssation.Patches
             var results = FindAll(bindingFlags);
             if (results.Count() > 1)
             {
-                throw new ArgumentOutOfRangeException("More than 1 method is found.");
+                throw new ArgumentOutOfRangeException($"More than 1 method is found. Type={Type.Name}, InnerMethodName={InnerMethodName}, ParentMethodName={ParentMethodName}");
             }
             if (results.Count() == 0)
             {
-                throw new ArgumentOutOfRangeException("No method is found.");
+                throw new ArgumentOutOfRangeException($"No method is found. Type={Type.Name}, InnerMethodName={InnerMethodName}, ParentMethodName={ParentMethodName}");
             }
             return results.First();
         }

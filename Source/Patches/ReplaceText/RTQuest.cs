@@ -444,7 +444,7 @@ namespace Localyssation.Patches.ReplaceText
         private static readonly TargetInnerMethod __TARGET = new TargetInnerMethod()
         {
             Type = typeof(QuestSelectionManager),
-            ParentMethodName = nameof(QuestSelectionManager.Update),
+            ParentMethodName = nameof(QuestSelectionManager.Handle_QuestSelector),
             InnerMethodName = "Handle_Expbar"
         };
 
