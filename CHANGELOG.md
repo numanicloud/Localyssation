@@ -1,12 +1,15 @@
 ## 2.3.0
-- Update mod to ATLYSS 112025.a1
+- Update mod to ATLYSS 112025.a3
 	- Fix unable to boot the mod for this version
-- Following translation keys are not used anymore
-	- DISABLE_ROOM_CHANNEL_MESSAGE
-	- ENABLE_ROOM_CHANNEL_MESSAGE
-	- QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_INCOMPLETE
-    - QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_TURN_IN
-    - QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_UNSELECTED
+- Fix "Add Missing Keys to Current Language" button shows wrong label
+- Breaking Changes for translators
+	- Not used anymore: `DISABLE_ROOM_CHANNEL_MESSAGE`
+	- Not used anymore: `ENABLE_ROOM_CHANNEL_MESSAGE`
+	- Not used anymore: `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_INCOMPLETE`
+    - Not used anymore: `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_TURN_IN`
+    - Not used anymore: `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_UNSELECTED`
+	- Key changed: `WEAPON_TYPE_FIST_WEAPONS` -> `WEAPON_TYPE_KATARS`
+	- Key changed: `WEAPON_TYPE_GREAT_WEAPON` -> `WEAPON_TYPE_GREATBLADE`
 - Now @NumAniCloud manages versioning and releases in this fork
 
 ## 2.2.2
