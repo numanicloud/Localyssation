@@ -1,11 +1,6 @@
 # Localyssation
 
-[![Version](https://thunderstore-badges.foreverjlong.workers.dev/Sallys_Workshop/Localyssation/version)](https://thunderstore.io/c/atlyss/p/Sallys_Workshop/Localyssation/)
-[![Downloads](https://thunderstore-badges.foreverjlong.workers.dev/Sallys_Workshop/Localyssation/downloads)](https://thunderstore.io/c/atlyss/p/Sallys_Workshop/Localyssation/)
-
-
-
-A work-in-progress localization library mod for [ATLYSS](https://store.steampowered.com/app/2768430/ATLYSS/). Check [Github page](https://github.com/sallys-workshop/Localyssation/) for newest update.
+A work-in-progress localization library mod for [ATLYSS](https://store.steampowered.com/app/2768430/ATLYSS/).
 
 ## Requirements
 
@@ -71,4 +66,4 @@ Also, this mod can't help with the texts inside pictures. Try texture swapping i
 
 ## Credit
 
-Originally created by [TheMysticSword](https://github.com/TheMysticSword/Localyssation), then forked and maintained by [TowardtheStars](https://github.com/TowardtheStars) as part of the CHS translation project held by team **Sally's Workshop**(莎莉小店).
+Originally created by [Sally's Workshop](https://github.com/sallys-workshop/Localyssation/), then forked and maintained by [NumAniCloud](https://github.com/numanicloud) as part of the Japanese translation project.
