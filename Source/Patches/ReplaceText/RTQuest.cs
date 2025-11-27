@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using HarmonyLib.Public.Patching;
 using Localyssation.LanguageModule;
 using Localyssation.Util;
 using System;
@@ -10,7 +9,6 @@ using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
-using YamlDotNet.Core.Tokens;
 
 namespace Localyssation.Patches.ReplaceText
 {
@@ -363,7 +361,7 @@ namespace Localyssation.Patches.ReplaceText
             var questTriggerRequirement_pos = RTUtil.GetIntOperand(matcher);
 
             matcher.MatchForward(false,
-				new CodeInstruction(OpCodes.Ldarg_2),
+				new CodeMatch(OpCodes.Ldarg_2),
 				new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(PlayerQuesting), nameof(PlayerQuesting.Apply_QuestProgressNote))));
 
             matcher.InsertAndAdvance(
@@ -413,7 +411,7 @@ namespace Localyssation.Patches.ReplaceText
             var questCreepRequirement_pos = RTUtil.GetIntOperand(matcher);
 
             matcher.MatchForward(false,
-				new CodeInstruction(OpCodes.Ldarg_2),
+				new CodeMatch(OpCodes.Ldarg_2),
 				new CodeMatch(OpCodes.Call, AccessTools.Method(typeof(PlayerQuesting), nameof(PlayerQuesting.Apply_QuestProgressNote))));
 
             matcher.InsertAndAdvance(
