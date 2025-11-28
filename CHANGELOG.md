@@ -1,14 +1,3 @@
-## 2.3.0
-- Update mod to ATLYSS 112025.a1
-	- Fix unable to boot the mod for this version
-- Following translation keys are not used anymore
-	- DISABLE_ROOM_CHANNEL_MESSAGE
-	- ENABLE_ROOM_CHANNEL_MESSAGE
-	- QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_INCOMPLETE
-    - QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_TURN_IN
-    - QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_UNSELECTED
-- Now @NumAniCloud manages versioning and releases in this fork
-
 ## 2.2.2
 - Bug fix
 	- Issue #26 & #27
