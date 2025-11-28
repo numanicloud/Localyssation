@@ -1,18 +1,19 @@
 ## 2.3.0
-- Update the mod to ATLYSS 112025.a3
-	- Fixed an issue where the mod could not boot for this version
-- Bug fix
-	- Fixed the "Add Missing Keys to Current Language" button displaying the incorrect label
-	- Fixed an issue where sending Unicode characters to chat was prevented
-- Known changes to the translation keys
-	- `DISABLE_ROOM_CHANNEL_MESSAGE` -> (no longer used)
-	- `ENABLE_ROOM_CHANNEL_MESSAGE` -> (no longer used)
-	- `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_INCOMPLETE` -> (unknown)
-    - `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_TURN_IN` -> (unknown)
-    - `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_UNSELECTED` -> (unknown)
-	- `WEAPON_TYPE_FIST_WEAPONS` -> `WEAPON_TYPE_KATARS`
-	- `WEAPON_TYPE_GREAT_WEAPON` -> `WEAPON_TYPE_GREATBLADE`
-- Now @NumAniCloud manages versioning and releases in this fork
+- Updated the mod for ATLYSS 112025.a3
+  - Fixed an issue where the mod failed to load in this version
+- Bug fixes
+  - Fixed an issue where the "Add Missing Keys to Current Language" button displayed an incorrect label
+  - Fixed an issue where sending Unicode characters in chat was blocked
+- Known changes to translation keys
+  - `DISABLE_ROOM_CHANNEL_MESSAGE` → (no longer used)
+  - `ENABLE_ROOM_CHANNEL_MESSAGE` → (no longer used)
+  - `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_INCOMPLETE` → (unknown)
+  - `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_TURN_IN` → (unknown)
+  - `QUEST_SELECTION_MANAGER_QUEST_ACCEPT_BUTTON_UNSELECTED` → (unknown)
+  - `WEAPON_TYPE_FIST_WEAPONS` → `WEAPON_TYPE_KATARS`
+  - `WEAPON_TYPE_GREAT_WEAPON` → `WEAPON_TYPE_GREATBLADE`
+  - `WEAPON_TYPE_MAGIC_BELL` → `WEAPON_TYPE_BELL`
+- Versioning and releases in this fork are now maintained by @NumAniCloud
 
 ## 2.2.2
 - Bug fix

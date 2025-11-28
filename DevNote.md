@@ -13,6 +13,7 @@
 ### NumAniCloud
 
 ブランチ戦略。
-- 機能開発の際はfeatureブランチを作成し、機能が完成したらmainにマージする。
-- originへプルリクエストを出す場合はfeatureブランチを提出する。mainでは `README.md` や `CHANGELOG.md` を独自に更新したいため、mainを提出しないこと。
-- originへマージされたfeatureブランチは削除する。それまでは削除しない。
+- 機能開発の際は feature ブランチを作成し、機能が完成したら develop と main にマージする。
+    - feature ブランチを作成する際、 main からではなく develop から派生する。
+- `README.md` などの独自の変更をするときは main ブランチにコミットする。
+- origin へプルリクエストを出す場合は develop ブランチを提出する。
