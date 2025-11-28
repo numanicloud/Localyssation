@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System;
 using System.Reflection.Emit;
 using Localyssation.Util;
+using Mirror;
+using UnityEngine;
 
 namespace Localyssation.Patches.ReplaceText
 {
@@ -68,7 +70,34 @@ namespace Localyssation.Patches.ReplaceText
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> ChatBehaviour__Send_ChatMessage__Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            return RTUtil.Wrap(instructions)
+            // テストコード
+            var matcher = new CodeMatcher(instructions)
+                .MatchForward(false,
+                    new CodeMatch(OpCodes.Call, AccessTools.PropertyGetter(typeof(NetworkClient), nameof(NetworkClient.active))));
+            matcher.InsertAndAdvance(
+                new CodeInstruction(OpCodes.Ldarg_1),
+                Transpilers.EmitDelegate<Func<string, string>>(msg =>
+				{
+                    Localyssation.logger.LogDebug($"Network client active: {NetworkClient.active}");
+					Localyssation.logger.LogDebug($"Is Enter Key Down: {Input.GetKeyDown(KeyCode.Return)}");
+					Localyssation.logger.LogDebug($"Chat message sent: {msg}");
+                    return msg;
+				}),
+                new CodeInstruction(OpCodes.Pop));
+
+            var matcher2 = new CodeMatcher(matcher.InstructionEnumeration())
+                .MatchForward(false,
+                    new CodeMatch(OpCodes.Ldarg_1),
+                    new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(string), nameof(string.Empty))))
+                .Advance(1);
+            matcher2.InsertAndAdvance(
+                Transpilers.EmitDelegate<Func<string, string>>(msg =>
+                {
+                    Localyssation.logger.LogDebug($"Chat message sent (empty check): {msg}");
+                    return msg;
+                }));
+
+			return RTUtil.Wrap(matcher2.InstructionEnumeration())
                 .ReplaceStrings(new[] {
                     I18nKeys.ChatBehaviour.GLOBAL_CHANNEL_DISABLED,
                     I18nKeys.ChatBehaviour.PARTY_CHANNEL_DISABLED,
@@ -77,8 +106,50 @@ namespace Localyssation.Patches.ReplaceText
                 }).Unwrap();
         }
 
+        [HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.UserCode_Rpc_RecieveChatMessage__String__Boolean__ChatChannel))]
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> ChatBehaviour__RecieveChatMessage__String__Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var matcher = new CodeMatcher(instructions)
+                .MatchForward(false,
+                    new CodeMatch(OpCodes.Stloc_1),
+                    new CodeMatch(OpCodes.Ldc_I4_0),
+                    new CodeMatch(OpCodes.Stloc_2),
+                    new CodeMatch(OpCodes.Br));
+            matcher.InsertAndAdvance(
+                new CodeInstruction(OpCodes.Ldarg_1),
+                Transpilers.EmitDelegate<Func<string, string>>(msg =>
+                {
+                    Localyssation.logger.LogDebug($"Chat message received: {msg}");
+                    return msg;
+                }),
+                new CodeInstruction(OpCodes.Pop));
 
-        [HarmonyPatch(typeof(ItemMenuCell), nameof(ItemMenuCell.PromptCmd_DropItem))]
+            return matcher.InstructionEnumeration();
+		}
+
+        [HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.UserCode_Cmd_SendChatMessage__String__ChatChannel))]
+        [HarmonyTranspiler]
+		static IEnumerable<CodeInstruction> Cmd_SendChatMessage__String__ChatChannel_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var matcher = new CodeMatcher(instructions)
+                .MatchForward(false,
+                    new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(GameManager), nameof(GameManager._current))),
+                    new CodeMatch(OpCodes.Ldarg_1),
+					new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(GameManager), nameof(GameManager.ContainsUnicodeCharacter))),
+                    new CodeMatch(OpCodes.Brfalse),
+                    new CodeMatch(OpCodes.Ldsfld, AccessTools.Field(typeof(string), nameof(string.Empty))),
+                    new CodeMatch(OpCodes.Starg_S))
+                .RemoveInstructions(6);
+
+			matcher.InstructionEnumeration()
+				.LogInstructions(nameof(Cmd_SendChatMessage__String__ChatChannel_Transpiler));
+
+			return matcher.InstructionEnumeration();
+		}
+
+
+		[HarmonyPatch(typeof(ItemMenuCell), nameof(ItemMenuCell.PromptCmd_DropItem))]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> ItemMenuCell__PromptCmd_DropItem__Transpiler(IEnumerable<CodeInstruction> instructions)
         {
