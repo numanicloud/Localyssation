@@ -37,7 +37,7 @@ namespace Localyssation.Patches.ReplaceText
             if (__instance.font != null && !USED_FONT_NAME.Contains(__instance.font.name))
             {
                 USED_FONT_NAME.Add(__instance.font.name);
-                Localyssation.logger.LogDebug($"Using font: `{__instance.font.name}`");
+                Localyssation.logger.LogDebug($"Using font: `{__instance.font.name}`, gameObject={PathUtil.GetPath(__instance.transform)}");
             }
 #endif
         }

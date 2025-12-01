@@ -1,6 +1,5 @@
 ﻿using HarmonyLib;
 using Localyssation.LanguageModule;
-using TMPro;
 
 namespace Localyssation.Patches.ReplaceFont
 {
@@ -15,5 +14,12 @@ namespace Localyssation.Patches.ReplaceFont
 
             FRUtil.ReplaceTmpFont(text, replacementFontLookupInfo);
         }
+
+        [HarmonyPatch(typeof(ChatBehaviourAssets), nameof(ChatBehaviourAssets.Start))]
+        [HarmonyPostfix]
+        public static void FixChatBoxFont(ChatBehaviourAssets __instance)
+        {
+			FRUtil.ReplaceTmpFont(__instance._chatText, LanguageManager.CurrentLanguage.info.chatFont);
+		}
     }
 }

@@ -67,7 +67,7 @@ namespace Localyssation.LangAdjutable
         {
             Localyssation.logger.LogDebug($"this.path = {PathUtil.GetPath(text.transform)}");
             Localyssation.logger.LogDebug($"path = {path}");
-            Localyssation.logger.LogDebug($"replacementFontLookupInfo = {replacementFontLookupInfo}");
+            Localyssation.logger.LogDebug($"replacementFontLookupInfo = {replacementFontLookupInfo.fontName}");
 
             if (PathUtil.GetPath(text.transform) == path 
                 && replacementFontLookupInfo != null
