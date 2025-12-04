@@ -173,7 +173,7 @@ namespace Localyssation.Patches.ReplaceText
 
         internal static Dictionary<string, string> dialogManagerQuickSentencesHack = new Dictionary<string, string>();
         [HarmonyPatch(typeof(DialogManager), nameof(DialogManager.Start_QuickSentence))]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         public static void DialogManager_Start_QuickSentence(DialogManager __instance, ref string _sentence)
         {
             // most likely shouldn't do this, because two different dialogue entries might share the same string

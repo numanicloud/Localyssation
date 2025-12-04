@@ -10,8 +10,7 @@ namespace Localyssation.Patches.ReplaceFont
     {
         public static void ReplaceTmpFont(TMPro.TMP_Text text, Language.BundledFontLookupInfo replacementFontLookupInfo)
         {
-            if (
-                replacementFontLookupInfo != null &&
+            if (replacementFontLookupInfo != null &&
                 FontManager.TMPfonts.TryGetValue(replacementFontLookupInfo.fontName, out var loadedFont))
             {
                 if (text.font != loadedFont)
@@ -21,8 +20,7 @@ namespace Localyssation.Patches.ReplaceFont
                     text.font = loadedFont;
                     text.fontSize = (int)(orig_fontSize * replacementFontLookupInfo.fontScale);
                     text.lineSpacing = orig_lineSpacing * replacementFontLookupInfo.fontScale;
-
-                }
+				}
             }
         }
 

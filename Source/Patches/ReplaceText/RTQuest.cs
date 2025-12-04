@@ -519,15 +519,16 @@ namespace Localyssation.Patches.ReplaceText
 
             TranspilerHelper
                 .RemoveMethodCallParamsStackForward(matcher, MessageCallbacks.New_ChatMessage, 7)
-                .InsertAndAdvance(new[] {
+                .InsertAndAdvance(new[]
+                {
                     new CodeInstruction(OpCodes.Ldarg_1),
-                    Transpilers.EmitDelegate<Func<ScriptableQuest, string>>( quest =>
-                        I18nKeys.Quest.RETRIEVED_QUEST_OBJECTIVE_ITEM_FORMAT
-                            .Format(
-                                KeyUtil.GetForAsset(quest._questObjectiveItem._scriptItem).Localize()
-                                )
-                    )
-                    });
+                    Transpilers.EmitDelegate<Func<ScriptableQuest, string>>(quest =>
+                    {
+                        var key = KeyUtil.GetForAsset(quest._questObjectiveItem._scriptItem) + "_NAME";
+						return I18nKeys.Quest.RETRIEVED_QUEST_OBJECTIVE_ITEM_FORMAT
+							.Format(Localyssation.GetString(key));
+                    })
+                });
 
             TranspilerHelper
                 .RemoveMethodCallParamsStackForward(matcher, MessageCallbacks.Init_GameLogicMessage, 5)
