@@ -1,3 +1,10 @@
+## 2.3.1
+- Function restoration
+  - The text in the chat window now uses a custom font.
+  - The dialog that may appear when trading with merchants will be translated.
+- Bug fix
+	- Fixed issue with incomprehensible chat logs when accepting certain quests.
+
 ## 2.3.0
 - Updated the mod for ATLYSS 112025.a3
   - Fixed an issue where the mod failed to load in this version
