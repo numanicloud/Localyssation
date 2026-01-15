@@ -1,7 +1,5 @@
-﻿
-using Localyssation.LanguageModule;
+﻿using Localyssation.LanguageModule;
 using Localyssation.Util;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -65,10 +63,6 @@ namespace Localyssation.LangAdjutable
 
         private bool ReplaceFontForPath(string path, BundledFontLookupInfo replacementFontLookupInfo)
         {
-            Localyssation.logger.LogDebug($"this.path = {PathUtil.GetPath(text.transform)}");
-            Localyssation.logger.LogDebug($"path = {path}");
-            Localyssation.logger.LogDebug($"replacementFontLookupInfo = {replacementFontLookupInfo.fontName}");
-
             if (PathUtil.GetPath(text.transform) == path 
                 && replacementFontLookupInfo != null
                 && !string.IsNullOrEmpty(replacementFontLookupInfo.fontName)

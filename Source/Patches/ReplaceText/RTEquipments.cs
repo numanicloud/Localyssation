@@ -79,25 +79,35 @@ namespace Localyssation.Patches.ReplaceText
                 if (_scriptEquip.GetType() == typeof(ScriptableWeapon))
                 {
                     var weapon = (ScriptableWeapon)_scriptEquip;
+                    var condition = weapon._equipConditionActivation
+                        ._equipConditionSlot
+                        ._scriptableCondition;
 
-                    if (weapon._weaponConditionSlot._scriptableCondition)
+					if (condition)
                     {
                         __instance._toolTipDescription.text += string.Format(
                             Localyssation.GetString(I18nKeys.Equipment.FORMAT_WEAPON_CONDITION, __instance._toolTipDescription.text, __instance._toolTipDescription.fontSize),
-                            weapon._weaponConditionSlot._chance * 100f,
+							weapon._equipConditionActivation._equipConditionSlot._chance * 100f,
                             Localyssation.GetString(
-                                $"{KeyUtil.GetForAsset(weapon._weaponConditionSlot._scriptableCondition)}_NAME",
-                                weapon._weaponConditionSlot._scriptableCondition._conditionName, __instance._toolTipDescription.fontSize)
+                                $"{KeyUtil.GetForAsset(condition)}_NAME",
+                                condition._conditionName, __instance._toolTipDescription.fontSize)
                             );
                     }
                     DamageType combatType = weapon.weaponType._combatType;
-                    __instance._weaponTypeText.text = string.Format(
+                    var combatTypeText = string.Format(
                         Localyssation.GetString(I18nKeys.Equipment.FORMAT_WEAPON_DAMAGE_TYPE),
                         Localyssation.GetString(KeyUtil.GetForAsset(combatType))
                     );
 
-                    //_weaponDamageTransmuteText.text = $"Damage Transmute: {_overrideType}"
-                    DamageType _overrideType = weapon.weaponType._combatType;
+					/*
+                    __instance._weaponTypeText.text = string.Format(
+                        Localyssation.GetString(I18nKeys.Equipment.FORMAT_WEAPON_DAMAGE_TYPE),
+                        Localyssation.GetString(KeyUtil.GetForAsset(combatType))
+                    );
+                    */
+
+					//_weaponDamageTransmuteText.text = $"Damage Transmute: {_overrideType}"
+					DamageType _overrideType = weapon.weaponType._combatType;
                     PlayerCombat _pCombat = Player._mainPlayer._pCombat;
                     if (_pCombat._useDamageTypeOverride && _itemData._isEquipped && ((_pCombat._isUsingAltWeapon && _itemData._isAltWeapon) || (!_pCombat._isUsingAltWeapon && !_itemData._isAltWeapon)))
                     {
@@ -113,16 +123,19 @@ namespace Localyssation.Patches.ReplaceText
                         Localyssation.GetString(KeyUtil.GetForAsset(_overrideType))
                     );
 
-
                     //__instance._equipToolTipType.text = $"{weapon.weaponType._weaponAnimSlots[weapon._weaponHoldClipIndex]._weaponNameTag} (Weapon)";
-                    __instance._equipToolTipType.text = string.Format(
+                    //__instance._equipToolTipType.text = string.Format(
+                    //    Localyssation.GetString(I18nKeys.Equipment.FORMAT_TOOLTIP_TYPE_WEAPON),
+                    //    Localyssation.GetString(KeyUtil.GetForAsset(weapon.weaponType))
+                    //);
+                    var weaponTypeText = string.Format(
                         Localyssation.GetString(I18nKeys.Equipment.FORMAT_TOOLTIP_TYPE_WEAPON),
                         Localyssation.GetString(KeyUtil.GetForAsset(weapon.weaponType))
                     );
+                    __instance._equipToolTipType.text = weaponTypeText + " " + combatTypeText;
 
 
-
-                    if (weapon._combatElement)
+					if (weapon._combatElement)
                     {
                         if (!string.IsNullOrEmpty(weapon._combatElement._elementName))
                             __instance._equipStatsDisplay.text = __instance._equipStatsDisplay.text.Replace(

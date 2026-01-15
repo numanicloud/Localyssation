@@ -48,6 +48,8 @@ namespace Localyssation.Patches.ReplaceText
                 .Unwrap();
         }
 
+		// TODO: Fix for version 12026.a3
+		/*
         [HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.On_ChannelSwitch))]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> ChatBehaviour__On_ChannelSwitch__Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -64,9 +66,10 @@ namespace Localyssation.Patches.ReplaceText
             });
             return matcher.InstructionEnumeration();
         }
+        */
 
-        /// Might conflict with command libs
-        [HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.Send_ChatMessage))]
+		/// Might conflict with command libs
+		[HarmonyPatch(typeof(ChatBehaviour), nameof(ChatBehaviour.Send_ChatMessage))]
         [HarmonyTranspiler]
         static IEnumerable<CodeInstruction> ChatBehaviour__Send_ChatMessage__Transpiler(IEnumerable<CodeInstruction> instructions)
         {

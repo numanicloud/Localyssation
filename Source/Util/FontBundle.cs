@@ -88,13 +88,6 @@ namespace Localyssation.Util
                     font => !font.fallbackFontAssetTable.Contains(UNIFONT_SDF),
                     font => font.fallbackFontAssetTable.Add(UNIFONT_SDF)
                 );
-
-            //Resources.UnloadUnusedAssets();
-            //Resources.LoadAll<TMP_FontAsset>("").Cast<TMP_FontAsset>().DoIf(
-            //    font => !font.fallbackFontAssetTable.Contains(UNIFONT_SDF),
-            //    font => font.fallbackFontAssetTable.Add(UNIFONT_SDF)
-            //);
-
         }
 
         private static void RegisterFontBundle(FontBundle fontBundle)

@@ -199,7 +199,10 @@ namespace Localyssation.Patches.ReplaceText
         {
             if (__instance._characterFileData._isEmptySlot)
             {
-                __instance._characterNicknameText.text = Localyssation.GetString("CHARACTER_SELECT_DATA_ENTRY_EMPTY_SLOT", __instance._characterNicknameText.text, __instance._characterNicknameText.fontSize);
+                __instance._characterNicknameText.text = Localyssation.GetString(
+                    "CHARACTER_SELECT_DATA_ENTRY_EMPTY_SLOT",
+                    __instance._characterNicknameText.text,
+                    (int)__instance._characterNicknameText.fontSize);
             }
             else
             {

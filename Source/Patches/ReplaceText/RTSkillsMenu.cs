@@ -129,7 +129,7 @@ namespace Localyssation.Patches.ReplaceText
             __instance._skillNameText.text = Localyssation.GetString(
                 $"{KeyUtil.GetForAsset(skill)}_NAME",
                 __instance._skillNameText.text,
-                __instance._skillNameText.fontSize
+                (int)__instance._skillNameText.fontSize
             );
             SkillStruct _skillStruct = __instance._skillStruct;
 
@@ -248,73 +248,79 @@ namespace Localyssation.Patches.ReplaceText
 
             Init_TermMacros();
             __instance.Apply_ConditionRankInfo();
+
             void Init_TermMacros()
             {
-                if (!(__instance._scriptSkill._skillDescription == string.Empty))
+                if (__instance._scriptSkill._skillDescription == string.Empty) return;
+
+                __instance._toolTipDescription.gameObject.SetActive(value: true);
+                string skillDescription = Localyssation.GetString(KeyUtil.GetForAsset(__instance._scriptSkill) + "_DESCRIPTION");
+                ScriptableCondition scriptableCondition = null;
+                ConditionSlot skillObjectCondition = __instance._scriptSkill._skillRankParams._skillObjectCondition;
+                int bonusPower = skillObjectCondition._conditionPower;
+                int bonusDuration = skillObjectCondition._conditionDuration;
+                if ((bool)skillObjectCondition._scriptableCondition)
                 {
-                    __instance._toolTipDescription.gameObject.SetActive(value: true);
-                    string skillDescription = Localyssation.GetString(KeyUtil.GetForAsset(__instance._scriptSkill) + "_DESCRIPTION");
-                    ScriptableCondition scriptableCondition = null;
-                    ConditionSlot skillObjectCondition = __instance._scriptSkill._skillRankParams._skillObjectOutput._skillObjectCondition;
-                    int bonusPower = __instance._scriptSkill._skillRankParams._skillObjectOutput._skillObjectCondition._bonusPower;
-                    int bonusDuration = __instance._scriptSkill._skillRankParams._skillObjectOutput._skillObjectCondition._bonusDuration;
-                    if ((bool)skillObjectCondition._scriptableCondition)
-                    {
-                        scriptableCondition = skillObjectCondition._scriptableCondition;
-                    }
-
-                    skillDescription = skillDescription.Replace("$SKP", $"<color=yellow>{_skillPower}</color>");
-                    skillDescription = skillDescription.Replace("$DMG", $"<color=yellow>({_skillPower} - {_skillPower + 3})</color>");
-                    skillDescription = skillDescription.Replace("$COOLDWN", string.Format(
-                        Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_COOLDOWN), __instance._scriptSkill._skillRankParams._baseCooldown
-                    ));
-                    skillDescription = skillDescription.Replace("$MANACOST", string.Format(
-                        //$"<color=yellow>Costs {__instance._scriptSkill._skillRankParams._manaCost} Mana.</color>"
-                        Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_MANACOST),
-                        __instance._scriptSkill._skillRankParams._manaCost
-                    ));
-                    skillDescription = skillDescription.Replace("$HEALTHCOST", string.Format(
-                        //$"<color=yellow>Costs {__instance._scriptSkill._skillRankParams._healthCost} Health.</color>"
-                        Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_HEALTH_COST),
-                        __instance._scriptSkill._skillRankParams._healthCost
-                    ));
-                    skillDescription = skillDescription.Replace("$STAMINACOST", string.Format(
-                        //$"<color=yellow>Costs {__instance._scriptSkill._skillRankParams._staminaCost} Stamina.</color>"
-                        Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_STAMINA_COST),
-                        __instance._scriptSkill._skillRankParams._staminaCost
-                    ));
-                    skillDescription = (!(__instance._scriptSkill._skillRankParams._baseCastTime > 0.12f)) ?
-                        skillDescription.Replace("$CASTTIME", Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CAST_TIME_INSTANT)) :
-                        skillDescription.Replace("$CASTTIME", string.Format(Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CAST_TIME), __instance._scriptSkill._skillRankParams._baseCastTime));
-                    skillDescription = skillDescription.Replace("$RECALLINPUT", "<color=yellow>[" + InputControlManager.current.Convert_KeyCodeName(InputControlManager.current._recall.ToString()) + "]</color>");
-                    skillDescription = skillDescription.Replace("$CHARGEATKINPUT", "<color=yellow>[" + InputControlManager.current.Convert_KeyCodeName(InputControlManager.current._chargeAttack.ToString()) + "]</color>");
-                    skillDescription = skillDescription.Replace("$DASHINPUT", "<color=yellow>[" + InputControlManager.current.Convert_KeyCodeName(InputControlManager.current._dash.ToString()) + "]</color>");
-                    if (__instance._scriptSkill._requireShield)
-                    {
-                        skillDescription += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIRE_SHIELD);
-                    }
-
-                    if (__instance._scriptSkill._toolTipRequirement != SkillToolTipRequirement.NONE)
-                    {
-                        skillDescription += string.Format(
-                            Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIEMENT_FORMAT),
-                            Localyssation.GetString(KeyUtil.GetForAsset(__instance._scriptSkill._toolTipRequirement))
-                        );
-                    }
-
-                    if ((bool)scriptableCondition && !string.IsNullOrWhiteSpace(scriptableCondition._conditionDescription))
-                    {
-                        string text = scriptableCondition.Generate_ConditionDescriptor(_pStats._statStruct, bonusPower, bonusDuration);
-                        string text2 = $"\n\n<color=cyan>{Localyssation.GetString(KeyUtil.GetForAsset(scriptableCondition) + "_NAME")} - ({Localyssation.GetString(KeyUtil.GetForAsset(scriptableCondition._conditionGroup) + "_NAME")})";
-                        text2 += (!(skillObjectCondition._chance < 1f)) ?
-                            ""
-                            : string.Format(Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CHANCE), skillObjectCondition._chance * 100f);
-                        text2 += "</color>\n" + text;
-                        skillDescription += text2;
-                    }
-
-                    __instance._toolTipDescription.text = skillDescription;
+                    scriptableCondition = skillObjectCondition._scriptableCondition;
                 }
+
+                skillDescription = skillDescription.Replace("$SKP", $"<color=yellow>{_skillPower}</color>");
+                skillDescription = skillDescription.Replace("$DMG", $"<color=yellow>({_skillPower} - {_skillPower + 3})</color>");
+                skillDescription = skillDescription.Replace("$COOLDWN", string.Format(
+                    Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_COOLDOWN), __instance._scriptSkill._skillRankParams._baseCooldown
+                ));
+                skillDescription = skillDescription.Replace("$MANACOST", string.Format(
+                    //$"<color=yellow>Costs {__instance._scriptSkill._skillRankParams._manaCost} Mana.</color>"
+                    Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_MANACOST),
+                    __instance._scriptSkill._skillRankParams._manaCost
+                ));
+                skillDescription = skillDescription.Replace("$HEALTHCOST", string.Format(
+                    //$"<color=yellow>Costs {__instance._scriptSkill._skillRankParams._healthCost} Health.</color>"
+                    Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_HEALTH_COST),
+                    __instance._scriptSkill._skillRankParams._healthCost
+                ));
+                skillDescription = skillDescription.Replace("$STAMINACOST", string.Format(
+                    //$"<color=yellow>Costs {__instance._scriptSkill._skillRankParams._staminaCost} Stamina.</color>"
+                    Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_STAMINA_COST),
+                    __instance._scriptSkill._skillRankParams._staminaCost
+                ));
+                skillDescription = (!(__instance._scriptSkill._skillRankParams._baseCastTime > 0.12f)) ?
+                    skillDescription.Replace("$CASTTIME", Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CAST_TIME_INSTANT)) :
+                    skillDescription.Replace("$CASTTIME", string.Format(Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CAST_TIME), __instance._scriptSkill._skillRankParams._baseCastTime));
+                skillDescription = skillDescription.Replace("$RECALLINPUT", "<color=yellow>[" + InputControlManager.current.Convert_KeyCodeName(InputControlManager.current._recall.ToString()) + "]</color>");
+                skillDescription = skillDescription.Replace("$CHARGEATKINPUT", "<color=yellow>[" + InputControlManager.current.Convert_KeyCodeName(InputControlManager.current._chargeAttack.ToString()) + "]</color>");
+                skillDescription = skillDescription.Replace("$DASHINPUT", "<color=yellow>[" + InputControlManager.current.Convert_KeyCodeName(InputControlManager.current._dash.ToString()) + "]</color>");
+                if (__instance._scriptSkill._requireShield)
+                {
+                    skillDescription += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIRE_SHIELD);
+                }
+
+                if (__instance._scriptSkill._toolTipRequirement != SkillToolTipRequirement.NONE)
+                {
+                    skillDescription += string.Format(
+                        Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIEMENT_FORMAT),
+                        Localyssation.GetString(KeyUtil.GetForAsset(__instance._scriptSkill._toolTipRequirement))
+                    );
+                }
+
+                if ((bool)scriptableCondition && !string.IsNullOrWhiteSpace(scriptableCondition._conditionDescription))
+                {
+                    string text = scriptableCondition.Generate_ConditionDescriptor(
+                        _pStats._statStruct,
+                        __instance._scriptSkill._skillDamageType,
+						bonusPower,
+                        bonusDuration,
+                        skillObjectCondition._powerPercent,
+                        skillObjectCondition._conditionRepeatRate);
+                    string text2 = $"\n\n<color=cyan>{Localyssation.GetString(KeyUtil.GetForAsset(scriptableCondition) + "_NAME")} - ({Localyssation.GetString(KeyUtil.GetForAsset(scriptableCondition._conditionGroup) + "_NAME")})";
+                    text2 += skillObjectCondition._chance >= 1f
+                        ? ""
+                        : string.Format(Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CHANCE), skillObjectCondition._chance * 100f);
+                    text2 += "</color>\n" + text;
+                    skillDescription += text2;
+                }
+
+                __instance._toolTipDescription.text = skillDescription;
             }
             return false;
         }
@@ -324,74 +330,100 @@ namespace Localyssation.Patches.ReplaceText
         [HarmonyPrefix]
         public static bool ScriptableStatusCondition__Generate_ConditionDescriptor__Prefix(
             ScriptableStatusCondition __instance,
-            StatStruct _parentStatStruct, int _bonusPower, int _bonusDuration,
-            ref string __result)
+            StatStruct _parentStatStruct,
+            DamageType _attribute,
+            int _setPower,
+            int _setDuration,
+            float _setPercent,
+            float _setRepeatRate,
+			ref string __result)
         {
-
             string conditionDescription = Localyssation.GetString(KeyUtil.GetForAsset(__instance) + "_DESCRIPTION");
-            int num = __instance.Get_ConditionPower(_parentStatStruct, _bonusPower);
-            __result = conditionDescription.Replace("$BASEPOWER", $"<color=yellow>{num}</color>").Replace("$APPLY_HEALTH", $"<color=yellow>{Mathf.Abs(num * __instance._applyHealth)}</color>").Replace("$STAT_MAXHEALTH", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._maxHealth, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_MAXMANA", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._maxMana, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_MAXSTAMINA", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._maxStamina, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_EXP", $"<color=yellow>{Mathf.Abs(__instance._statStruct._experience)}</color>")
-                .Replace("$STAT_ATTACKPOWER", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._attackPower, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_MAGICPOWER", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._magicPower, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_DEXPOWER", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._dexPower, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_DEFENSE", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._defense, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_MAGICDEFENSE", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._magicDefense, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_CRITRATE", "<color=yellow>" + Mathf.Abs(__instance.FloatStatCalculate(__instance._statStruct._criticalRate, _parentStatStruct, _bonusPower) * 100f).ToString("N2") + "%</color>")
-                .Replace("$STAT_MAGICCRITRATE", "<color=yellow>" + Mathf.Abs(__instance.FloatStatCalculate(__instance._statStruct._magicCriticalRate, _parentStatStruct, _bonusPower) * 100f).ToString("N2") + "%</color>")
-                .Replace("$STAT_EVASION", "<color=yellow>" + Mathf.Abs(__instance.FloatStatCalculate(__instance._statStruct._evasion, _parentStatStruct, _bonusPower) * 100f).ToString("N2") + "%</color>")
-                .Replace("$STAT_RESISTFIRE", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._fireResist, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_RESISTWATER", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._waterResist, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_RESISTNATURE", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._natureResist, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_RESISTEARTH", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._earthResist, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_RESISTHOLY", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._holyResist, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$STAT_RESISTSHADOW", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._statStruct._shadowResist, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$ABSORB", $"<color=yellow>{Mathf.Abs(__instance.StatCalculate(__instance._damageAbsorbtionAmount, _parentStatStruct, _bonusPower))}</color>")
-                .Replace("$MOVSPEED", $"<color=yellow>{Mathf.Abs(__instance._movSpeedPercentChange * 100f)}%</color>")
-                //.Replace("$DURATION", $"<color=yellow>Lasts for {__instance._duration + (float)_bonusDuration} sec</color>.")
-                .Replace("$DURATION", string.Format(Localyssation.GetString(I18nKeys.ScriptableStatusCondition.DURATION_FORMAT), __instance._duration + _bonusDuration))
-                //.Replace("$RATE", $"<color=yellow>every {__instance._repeatRate} sec</color>.");
-                .Replace("$RATE", string.Format(Localyssation.GetString(I18nKeys.ScriptableStatusCondition.RATE_FORMAT), __instance._repeatRate));
-            return false;
+            int num = __instance.Get_ConditionPower(_parentStatStruct, _attribute, _setPower, _setDuration);
+            var stat = __instance._statStruct;
+            __result = conditionDescription.Replace("$BASEPOWER", $"<color=yellow>{num}</color>")
+                .Replace("$APPLY_HEALTH", AsString(num * __instance._applyHealth))
+                .Replace("$STAT_MAXHEALTH", AsString(GetStat(stat._maxHealth)))
+                .Replace("$STAT_MAXMANA", AsString(GetStat(stat._maxMana)))
+                .Replace("$STAT_MAXSTAMINA", AsString(GetStat(stat._maxStamina)))
+                .Replace("$STAT_EXP", AsString(stat._experience))
+                .Replace("$STAT_ATTACKPOWER", AsString(GetStat(stat._attackPower)))
+                .Replace("$STAT_MAGICPOWER", AsString(GetStat(stat._magicPower)))
+                .Replace("$STAT_DEXPOWER", AsString(GetStat(stat._dexPower)))
+                .Replace("$STAT_DEFENSE", AsString(GetStat(stat._defense)))
+                .Replace("$STAT_MAGICDEFENSE", AsString(GetStat(stat._magicDefense)))
+                .Replace("$STAT_CRITRATE", AsFloatString(GetFloatStat(stat._criticalRate)))
+                .Replace("$STAT_MAGICCRITRATE", AsFloatString(GetFloatStat(stat._magicCriticalRate)))
+                .Replace("$STAT_EVASION", AsFloatString(GetFloatStat(stat._evasion)))
+                .Replace("$STAT_RESISTFIRE", AsString(GetStat(stat._fireResist)))
+                .Replace("$STAT_RESISTWATER", AsString(GetStat(stat._waterResist)))
+                .Replace("$STAT_RESISTNATURE", AsString(GetStat(stat._natureResist)))
+                .Replace("$STAT_RESISTEARTH", AsString(GetStat(stat._earthResist)))
+                .Replace("$STAT_RESISTHOLY", AsString(GetStat(stat._holyResist)))
+                .Replace("$STAT_RESISTSHADOW", AsString(GetStat(stat._shadowResist)))
+                .Replace("$ABSORB", AsString(GetStat(__instance._damageAbsorbtionAmount)))
+                .Replace("$MOVSPEED", AsFloatString(__instance._movSpeedPercentChange * 100f))
+				.Replace("$DURATION", "")
+				.Replace("$RATE", string.Format(Localyssation.GetString(I18nKeys.ScriptableStatusCondition.RATE_FORMAT), _setRepeatRate));
+            if (_setDuration > 0f)
+            {
+                __result += $" <color=yellow>Lasts for {_setDuration} sec</color>.";
+            }
+			return false;
+
+            string AsString(int source) => $"<color=yellow>{Mathf.Abs(source)}</color>";
+
+            string AsFloatString(float source) => $"<color=yellow>{Mathf.Abs(source):N2}%</color>";
+
+            int GetStat(int source) => __instance.StatCalculate(_parentStatStruct, _attribute, source, _setPower, _setPercent);
+
+            float GetFloatStat(float source)
+            {
+                var result = __instance.FloatStatCalculate(_parentStatStruct,
+                    _attribute,
+                    source,
+                    _setPower,
+                    _setPercent);
+                return result * 100f;
+            }
         }
-
-
-
-
-
-
 
         [HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_ConditionRankInfo))]
         [HarmonyPrefix]
         public static bool SkillToolTip__Apply_ConditionRankInfo__Prefix(SkillToolTip __instance)
         {
-            if (__instance._scriptSkill._skillRankParams._selfConditionOutput == null)
-            {
+            if (__instance._scriptSkill._skillRankParams._selfConditionOutput == null) return false;
+
+            ScriptableCondition condition = __instance._scriptSkill._skillRankParams._selfConditionOutput._scriptableCondition;
+            if (!(bool)condition || !(bool)condition._conditionGroup)
                 return false;
-            }
 
-            ScriptableCondition selfConditionOutput = __instance._scriptSkill._skillRankParams._selfConditionOutput;
-            if ((bool)selfConditionOutput && (bool)selfConditionOutput._conditionGroup)
+            __instance._skillConditionsListing.text += "\n";
+            var text = string.Format("<color=cyan>{0} - ({1})</color>\n",
+                Localyssation.GetString(KeyUtil.GetForAsset(condition) + "_NAME"),
+                Localyssation.GetString(KeyUtil.GetForAsset(condition._conditionGroup) + "_NAME")
+            );
+
+            var scriptSkill = __instance._scriptSkill;
+            var conditionOutput = scriptSkill._skillRankParams._selfConditionOutput;
+            text += condition.Generate_ConditionDescriptor(
+                Player._mainPlayer._pStats._statStruct,
+                scriptSkill._skillDamageType,
+                conditionOutput._conditionPower,
+                conditionOutput._conditionDuration,
+                conditionOutput._powerPercent,
+                conditionOutput._conditionRepeatRate);
+            __instance._skillConditionsListing.text += text;
+
+            // 廃止された？
+            //if (condition._isStackable)
+            //{
+            //    __instance._skillConditionsListing.text += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_IS_STACKABLE);
+            //}
+
+            if (condition._cancelOnHit)
             {
-                __instance._skillConditionsListing.text += "\n";
-                //string text = "<color=cyan>" + selfConditionOutput._conditionName + " - (" + selfConditionOutput._conditionGroup._conditionGroupTag + ")</color>\n";
-                string text = string.Format("<color=cyan>{0} - ({1})</color>\n",
-                    Localyssation.GetString(KeyUtil.GetForAsset(selfConditionOutput) + "_NAME"),
-                    Localyssation.GetString(KeyUtil.GetForAsset(selfConditionOutput._conditionGroup) + "_NAME")
-                    );
-                text += selfConditionOutput.Generate_ConditionDescriptor(Player._mainPlayer._pStats._statStruct, 0, 0);
-                __instance._skillConditionsListing.text += text;
-                if (selfConditionOutput._isStackable)
-                {
-                    __instance._skillConditionsListing.text += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_IS_STACKABLE);
-                }
-
-                if (selfConditionOutput._cancelOnHit)
-                {
-                    __instance._skillConditionsListing.text += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CANCEL_ON_HIT);
-                }
+                __instance._skillConditionsListing.text += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CANCEL_ON_HIT);
             }
             return false;
         }
