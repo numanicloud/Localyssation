@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -208,18 +209,213 @@ namespace Localyssation.Patches.ReplaceText
             });
         }
 
+        [HarmonyPatch]
+        private class SkillToolTip_Apply_SkillDescriptorInfo
+		{
+			private static readonly Regex WeaponRequirementPattern = new Regex(@"Requires a (.+)\.");
+
+			[HarmonyTargetMethod]
+            public static MethodBase TargetMethod()
+            {
+                return AccessTools.GetDeclaredMethods(typeof(SkillToolTip))
+                    .Where(methodInfo => methodInfo.Name.Contains(
+                        $"<{nameof(SkillToolTip.Apply_SkillDescriptorInfo)}>g__Init_TermMacros"))
+                    .Cast<MethodBase>()
+                    .FirstOrDefault();
+            }
+
+            [HarmonyTranspiler]
+            public static IEnumerable<CodeInstruction> Transpiler(
+                IEnumerable<CodeInstruction> instructions)
+            {
+                var matcher = new CodeMatcher(instructions);
+
+                PatchStringReplace(matcher);
+
+                matcher.Start();
+                PatchWeaponRequirement(matcher);
+
+                matcher.Start();
+				PatchConditionName(matcher);
+
+                matcher.Start();
+				PatchConditionGroupTag(matcher);
+
+                matcher.InstructionEnumeration().LogInstructions("Apply_SkillDescriptorInfo:");
+
+                return matcher.InstructionEnumeration();
+            }
+
+            private static void PatchConditionGroupTag(CodeMatcher matcher)
+            {
+                Localyssation.logger.LogDebug($"Patching conditionGroupTag");
+                matcher.MatchForward(true,
+                        new CodeMatch(OpCodes.Ldfld,
+                            AccessTools.Field(typeof(ScriptableConditionGroup),
+                                nameof(ScriptableConditionGroup._conditionGroupTag))))
+                    .Repeat(cm =>
+                    {
+                        Localyssation.logger.LogDebug($"conditionGroupTag matched");
+                        cm.Advance(1)
+                            .InsertAndAdvance(
+                                new CodeInstruction(OpCodes.Ldloc_1),
+                                new CodeInstruction(OpCodes.Ldfld,
+                                    AccessTools.Field(typeof(ScriptableCondition),
+                                        nameof(ScriptableCondition._conditionGroup))),
+                                EmitConditionGroupLocalization());
+                    });
+            }
+
+            // TODO: このメソッドがクラッシュの原因になっている
+            private static void PatchConditionName(CodeMatcher matcher)
+            {
+                Localyssation.logger.LogDebug($"Patching conditionName");
+                matcher.MatchForward(true,
+                        new CodeMatch(OpCodes.Ldfld,
+                            AccessTools.Field(typeof(ScriptableCondition),
+                                nameof(ScriptableCondition._conditionName))))
+                    .Repeat(cm =>
+                    {
+                        Localyssation.logger.LogDebug($"conditionName matched");
+                        cm.Advance(1)
+                            .InsertAndAdvance(
+                                new CodeInstruction(OpCodes.Ldloc_1),
+                                EmitConditionNameLocalization());
+                    });
+            }
+
+            private static void PatchWeaponRequirement(CodeMatcher matcher)
+            {
+                Localyssation.logger.LogDebug($"Patching weapon requirement");
+                matcher.MatchForward(true,
+                        new CodeMatch(x => x.opcode == OpCodes.Ldstr && ((string)x.operand).Contains(" <color=yellow>Requires a ")))
+                    .Repeat(match =>
+                    {
+                        Localyssation.logger.LogDebug($"weapon requirement matched");
+                        match.Advance(1)
+                            .InsertAndAdvance(Transpilers.EmitDelegate<Func<string, string>>(origin =>
+                            {
+                                var regexMatch = WeaponRequirementPattern.Match(origin);
+                                var requirement = AlterWeaponRequirement(regexMatch.Groups[0].Value);
+                                return string.Format(
+                                    Localyssation.GetString(I18nKeys.SkillMenu
+                                        .TOOLTIP_REQUIEMENT_FORMAT),
+                                    requirement);
+                            }));
+                    });
+            }
+
+            private static void PatchStringReplace(CodeMatcher matcher)
+            {
+                Localyssation.logger.LogDebug($"Patching string.Replace");
+                matcher.MatchForward(true,
+                        new CodeMatch(OpCodes.Callvirt,
+                            AccessTools.Method(
+                                typeof(string),
+                                nameof(string.Replace),
+                                new[]{ typeof(string), typeof(string) })))
+                    .Repeat(cm =>
+                    {
+                        cm.MatchBack(false,
+                            new CodeMatch(OpCodes.Ldstr), // 置換変数名
+                            new CodeMatch(OpCodes.Ldstr));  // フォーマット文字列
+                        var varName = cm.Operand.ToString();
+                        Localyssation.logger.LogDebug($"Replace({varName}, %) matched");
+
+						cm.Advance(2)
+                            .InsertAndAdvance(
+                                new CodeInstruction(OpCodes.Ldstr, varName),
+                                Transpilers.EmitDelegate<Func<string, string, string>>(AlterSkillDescription));
+                    });
+            }
+
+            private static CodeInstruction EmitConditionNameLocalization()
+            {
+                return Transpilers.EmitDelegate<Func<string, ScriptableCondition, string>>(
+                    (src, condition) =>
+                    {
+                        try
+						{
+							return Localyssation.GetString(
+                                KeyUtil.GetForAsset(condition) + "_NAME");
+						}
+                        catch (Exception e)
+                        {
+                            Localyssation.logger.LogError($"Error occuring for {condition}, {condition.name}, {condition._conditionName}");
+                            Localyssation.logger.LogError(e);
+                            throw;
+                        }
+                    });
+            }
+
+            private static CodeInstruction EmitConditionGroupLocalization()
+            {
+                return Transpilers.EmitDelegate<Func<string, ScriptableConditionGroup, string>>(
+                    (src, group) =>
+                        Localyssation.GetString(KeyUtil.GetForAsset(group) + "_NAME"));
+            }
+
+            private static string AlterSkillDescription(string original, string variableName)
+            {
+                switch (variableName)
+                {
+                case "$SKP": return "<color=yellow>{0}</color>";
+                case "$DMG": return "<color=yellow>({0} - {1})</color>";
+                case "$COOLDWN": return Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_COOLDOWN);
+                case "$MANACOST":
+                    return Localyssation.GetString(I18nKeys.SkillMenu
+                        .TOOLTIP_DESCRIPTOR_MANACOST);
+                case "$HEALTHCOST":
+                    return Localyssation.GetString(I18nKeys.SkillMenu
+                        .TOOLTIP_HEALTH_COST);
+                case "$STAMINACOST":
+                    return Localyssation.GetString(I18nKeys.SkillMenu
+                        .TOOLTIP_STAMINA_COST);
+                case "$CASTTIME":
+                    return Localyssation.GetString(I18nKeys.SkillMenu
+                        .TOOLTIP_DESCRIPTOR_CAST_TIME);
+                case "$CASTTIME_INSTANT":
+                    return Localyssation.GetString(I18nKeys.SkillMenu
+                        .TOOLTIP_DESCRIPTOR_CAST_TIME_INSTANT);
+                default: return original;
+                }
+            }
+
+			private static string AlterWeaponRequirement(string original)
+            {
+                var regexMatch = WeaponRequirementPattern.Match(original);
+                switch (regexMatch.Captures[0].Value)
+                {
+                case "shield":
+                    return Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIRE_SHIELD);
+                case "melee weapon":
+                    return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.MELEE));
+                case "heavy melee weapon":
+                    return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.HEAVY_MELEE));
+                case "ranged weapon":
+                    return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.RANGED));
+                case "heavy ranged weapon":
+                    return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.HEAVY_RANGED));
+                case "magic weapon":
+                    return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.MAGIC));
+                case "heavy magic weapon":
+                    return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.HEAVY_MAGIC));
+                default:
+                    return original;
+                }
+            }
+		}
 
 
-
-
-        /// <summary>
-        /// Total rewrite
-        /// </summary>
-        /// <param name="__instance"></param>
-        /// <returns></returns>
-        [HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_SkillDescriptorInfo))]
-        [HarmonyPrefix]
-        public static bool SkillToolTip__Apply_SkillDescriptorInfo__Prefix(SkillToolTip __instance)
+		// TODO: 計算式がかなり変わったため、Transpilerで書き直したい
+		/// <summary>
+		/// Total rewrite
+		/// </summary>
+		/// <param name="__instance"></param>
+		/// <returns></returns>
+		//[HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_SkillDescriptorInfo))]
+		//[HarmonyPrefix]
+		public static bool SkillToolTip__Apply_SkillDescriptorInfo__Prefix(SkillToolTip __instance)
         {
             PlayerStats _pStats = Player._mainPlayer._pStats;
             int _skillPower = 0;
@@ -251,6 +447,10 @@ namespace Localyssation.Patches.ReplaceText
 
             void Init_TermMacros()
             {
+                // TODO: Transpiler で書く。
+                // call Format, callvirt Replace の間に翻訳処理を挟める
+                // そのとき、スタックのトップに整形された変数, その下に置換変数名があるはず
+
                 if (__instance._scriptSkill._skillDescription == string.Empty) return;
 
                 __instance._toolTipDescription.gameObject.SetActive(value: true);
@@ -330,8 +530,6 @@ namespace Localyssation.Patches.ReplaceText
 		public static IEnumerable<CodeInstruction> ScriptableStatusCondition__Generate_ConditionDescriptor__Transpiler(
             IEnumerable<CodeInstruction> instructions)
         {
-            Localyssation.logger.LogDebug($"{nameof(ScriptableStatusCondition__Generate_ConditionDescriptor__Transpiler)}");
-
             var conditionDescriptionPos = AccessTools.Field(typeof(ScriptableCondition),
                 nameof(ScriptableCondition._conditionDescription));
 
@@ -339,10 +537,8 @@ namespace Localyssation.Patches.ReplaceText
 
             matcher.MatchForward(false,
                 new CodeMatch(OpCodes.Ldfld, conditionDescriptionPos),
-                new CodeMatch(OpCodes.Stloc_0));
-            matcher.Advance(1);
-
-            Localyssation.logger.LogDebug($"matcher Pos={matcher.Pos}, Opcode={matcher.Opcode}, Remaining={matcher.Remaining}");
+                new CodeMatch(OpCodes.Stloc_0))
+                .Advance(1);
 
 			matcher.InsertAndAdvance(
                 new CodeInstruction(OpCodes.Ldarg_0),
@@ -352,131 +548,54 @@ namespace Localyssation.Patches.ReplaceText
                         var description = Localyssation.GetString(KeyUtil.GetForAsset(instance) + "_DESCRIPTION");
                         Localyssation.logger.LogDebug($"Description of {instance.name}");
                         Localyssation.logger.LogDebug($"Replaced condition description: '{src}' -> '{description}'");
+                        Localyssation.logger.LogDebug($"applyHealth: {instance._applyHealth}");
                         return description;
 					}));
-
-			Localyssation.logger.LogDebug($"matcher Pos={matcher.Pos}, Opcode={matcher.Opcode}, Remaining={matcher.Remaining}");
-            matcher.InstructionEnumeration().LogInstructions();
 
 			return matcher.InstructionEnumeration();
         }
 
-		//[HarmonyPatch(typeof(ScriptableStatusCondition), nameof(ScriptableStatusCondition.Generate_ConditionDescriptor))]
-        //[HarmonyPrefix]
-        public static bool ScriptableStatusCondition__Generate_ConditionDescriptor__Prefix(
-            ScriptableStatusCondition __instance,
-            StatStruct _parentStatStruct,
-            DamageType _attribute,
-            int _setPower,
-            int _setDuration,
-            float _setPercent,
-            float _setRepeatRate,
-			ref string __result)
-        {
-            string conditionDescription = Localyssation.GetString(KeyUtil.GetForAsset(__instance) + "_DESCRIPTION");
-            Localyssation.logger.LogDebug(__instance.name);
-            Localyssation.logger.LogDebug($"result-src: {conditionDescription}");
-
-			int num = __instance.Get_ConditionPower(_parentStatStruct, _attribute, _setPower, _setPercent);
-            var stat = __instance._statStruct;
-            __result = conditionDescription.Replace("$BASEPOWER", $"<color=yellow>{num}</color>")
-                .Replace("$APPLY_HEALTH", AsString(num * __instance._applyHealth))
-                .Replace("$STAT_MAXHEALTH", AsString(GetStat(stat._maxHealth)))
-                .Replace("$STAT_MAXMANA", AsString(GetStat(stat._maxMana)))
-                .Replace("$STAT_MAXSTAMINA", AsString(GetStat(stat._maxStamina)))
-                .Replace("$STAT_EXP", AsString(stat._experience))
-                .Replace("$STAT_ATTACKPOWER", AsString(GetStat(stat._attackPower)))
-                .Replace("$STAT_MAGICPOWER", AsString(GetStat(stat._magicPower)))
-                .Replace("$STAT_DEXPOWER", AsString(GetStat(stat._dexPower)))
-                .Replace("$STAT_DEFENSE", AsString(GetStat(stat._defense)))
-                .Replace("$STAT_MAGICDEFENSE", AsString(GetStat(stat._magicDefense)))
-                .Replace("$STAT_CRITRATE", AsFloatString(GetFloatStat(stat._criticalRate)))
-                .Replace("$STAT_MAGICCRITRATE", AsFloatString(GetFloatStat(stat._magicCriticalRate)))
-                .Replace("$STAT_EVASION", AsFloatString(GetFloatStat(stat._evasion)))
-                .Replace("$STAT_RESISTFIRE", AsString(GetStat(stat._fireResist)))
-                .Replace("$STAT_RESISTWATER", AsString(GetStat(stat._waterResist)))
-                .Replace("$STAT_RESISTNATURE", AsString(GetStat(stat._natureResist)))
-                .Replace("$STAT_RESISTEARTH", AsString(GetStat(stat._earthResist)))
-                .Replace("$STAT_RESISTHOLY", AsString(GetStat(stat._holyResist)))
-                .Replace("$STAT_RESISTSHADOW", AsString(GetStat(stat._shadowResist)))
-                .Replace("$ABSORB", AsString(GetStat(__instance._damageAbsorbtionAmount)))
-                .Replace("$MOVSPEED", AsFloatString(__instance._movSpeedPercentChange * 100f))
-				.Replace("$DURATION", "")
-				.Replace("$RATE", string.Format(Localyssation.GetString(I18nKeys.ScriptableStatusCondition.RATE_FORMAT), _setRepeatRate));
-            if (_setDuration > 0f)
-            {
-                var duration =
-                    string.Format(Localyssation.GetString(
-                        I18nKeys.ScriptableStatusCondition.DURATION_FORMAT),
-                        _setDuration);
-				__result += $" <color=yellow>{duration}</color>.";
-			}
-
-            Localyssation.logger.LogDebug($@"
-parent-attack: {_parentStatStruct._attackPower}
-parent-magic: {_parentStatStruct._magicPower}
-parent-dex: {_parentStatStruct._dexPower}
-parent-health: {_parentStatStruct._maxHealth}
-attribute: {_attribute}
-setPower: {_setPower}
-setPercent: {_setPercent}
-basePower: {num}
-applyHealth: {__instance._applyHealth}
-num*applyHealth: {num * __instance._applyHealth}
-maxHealth: {stat._maxHealth}
-maxMana: {stat._maxMana}
-maxStamina: {stat._maxStamina}
-experience: {stat._experience}
-attackPower: {stat._attackPower}
-magicPower: {stat._magicPower}
-dexPower: {stat._dexPower}
-defense: {stat._defense}
-magicDefense: {stat._magicDefense}
-criticalRate: {stat._criticalRate}
-magicCriticalRate: {stat._magicCriticalRate}
-evasion: {stat._evasion}
-fireResist: {stat._fireResist}
-waterResist: {stat._waterResist}
-natureResist: {stat._natureResist}
-earthResist: {stat._earthResist}
-holyResist: {stat._holyResist}
-shadowResist: {stat._shadowResist}
-damageAbsorbtionAmount: {__instance._damageAbsorbtionAmount}
-moveSpeedPercentChange: {__instance._movSpeedPercentChange}
-");
-            Localyssation.logger.LogDebug($"result-dst: {__result}");
-			return false;
-
-            string AsString(int source) => $"<color=yellow>{Mathf.Abs(source)}</color>";
-
-            string AsFloatString(float source) => $"<color=yellow>{Mathf.Abs(source):N2}%</color>";
-
-            int GetStat(int source)
-            {
-                var result = __instance.StatCalculate(_parentStatStruct, _attribute, source,
-                    _setPower, _setPercent);
-                Localyssation.logger.LogDebug($"calc({nameof(_parentStatStruct)}, {_attribute}, {source}, {_setPower}, {_setPercent}) = {result}");
-                return result;
-            }
-
-            float GetFloatStat(float source)
-            {
-                var result = __instance.FloatStatCalculate(_parentStatStruct,
-                    _attribute,
-                    source,
-                    _setPower,
-                    _setPercent);
-                return result * 100f;
-            }
-        }
-
-        [HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_ConditionRankInfo))]
+		[HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_ConditionRankInfo))]
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> SkillToolTip__Apply_ConditionRankInfo__Transpiler(
             IEnumerable<CodeInstruction> instructions)
         {
             var matcher = new CodeMatcher(instructions);
+
             matcher.MatchForward(true,
+                    new CodeMatch(OpCodes.Ldfld,
+                        AccessTools.Field(typeof(ConditionSlot),
+                            nameof(ConditionSlot._conditionPower))))
+                .Advance(1);
+            matcher.InsertAndAdvance(Transpilers.EmitDelegate<Func<int, int>>(x =>
+            {
+                Localyssation.logger.LogDebug($"conditionPower: {x}");
+                return x;
+            }));
+
+            matcher.MatchForward(true,
+                    new CodeMatch(OpCodes.Ldfld,
+                        AccessTools.Field(typeof(ConditionSlot),
+                            nameof(ConditionSlot._conditionDuration))))
+                .Advance(1);
+            matcher.InsertAndAdvance(Transpilers.EmitDelegate<Func<int, int>>(x =>
+            {
+                Localyssation.logger.LogDebug($"conditionDuration: {x}");
+                return x;
+            }));
+
+			matcher.MatchForward(true,
+                    new CodeMatch(OpCodes.Ldfld,
+                        AccessTools.Field(typeof(ConditionSlot),
+                            nameof(ConditionSlot._powerPercent))))
+                .Advance(1);
+            matcher.InsertAndAdvance(Transpilers.EmitDelegate<Func<float, float>>(x =>
+            {
+                Localyssation.logger.LogDebug($"powerPercent: {x}");
+                return x;
+            }));
+
+			matcher.MatchForward(true,
                 new CodeMatch(OpCodes.Ldfld,
                     AccessTools.Field(typeof(ScriptableCondition),
                         nameof(ScriptableCondition._conditionName))))
@@ -498,53 +617,10 @@ moveSpeedPercentChange: {__instance._movSpeedPercentChange}
                     src,
                     condition) => Localyssation.GetString(KeyUtil.GetForAsset(condition._conditionGroup) + "_NAME")));
 
-            matcher.InstructionEnumeration().LogInstructions("Apply_ConditionRankInfo");
-
 			return RTUtil.SimpleStringReplaceTranspiler(matcher.InstructionEnumeration(), new[] {
                 I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CANCEL_ON_HIT
             });
 		}
-
-		//[HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_ConditionRankInfo))]
-        //[HarmonyPrefix]
-        public static bool SkillToolTip__Apply_ConditionRankInfo__Prefix(SkillToolTip __instance)
-        {
-            if (__instance._scriptSkill._skillRankParams._selfConditionOutput == null) return false;
-
-            ScriptableCondition condition = __instance._scriptSkill._skillRankParams._selfConditionOutput._scriptableCondition;
-            if (!(bool)condition || !(bool)condition._conditionGroup)
-                return false;
-
-            __instance._skillConditionsListing.text += "\n";
-            var text = string.Format("<color=cyan>{0} - ({1})</color>\n",
-                Localyssation.GetString(KeyUtil.GetForAsset(condition) + "_NAME"),
-                Localyssation.GetString(KeyUtil.GetForAsset(condition._conditionGroup) + "_NAME")
-            );
-
-            var scriptSkill = __instance._scriptSkill;
-            var conditionOutput = scriptSkill._skillRankParams._selfConditionOutput;
-            text += condition.Generate_ConditionDescriptor(
-                Player._mainPlayer._pStats._statStruct,
-                scriptSkill._skillDamageType,
-                conditionOutput._conditionPower,
-                conditionOutput._conditionDuration,
-                conditionOutput._powerPercent,
-                conditionOutput._conditionRepeatRate);
-            __instance._skillConditionsListing.text += text;
-
-            // 廃止された？
-            //if (condition._isStackable)
-            //{
-            //    __instance._skillConditionsListing.text += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_IS_STACKABLE);
-            //}
-
-            if (condition._cancelOnHit)
-            {
-                __instance._skillConditionsListing.text += Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CANCEL_ON_HIT);
-            }
-            return false;
-        }
-
     }
 
     //[HarmonyPatch]
