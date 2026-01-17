@@ -325,9 +325,44 @@ namespace Localyssation.Patches.ReplaceText
             return false;
         }
 
-
         [HarmonyPatch(typeof(ScriptableStatusCondition), nameof(ScriptableStatusCondition.Generate_ConditionDescriptor))]
-        [HarmonyPrefix]
+        [HarmonyTranspiler]
+		public static IEnumerable<CodeInstruction> ScriptableStatusCondition__Generate_ConditionDescriptor__Transpiler(
+            IEnumerable<CodeInstruction> instructions)
+        {
+            Localyssation.logger.LogDebug($"{nameof(ScriptableStatusCondition__Generate_ConditionDescriptor__Transpiler)}");
+
+            var conditionDescriptionPos = AccessTools.Field(typeof(ScriptableCondition),
+                nameof(ScriptableCondition._conditionDescription));
+
+            var matcher = new CodeMatcher(instructions);
+
+            matcher.MatchForward(false,
+                new CodeMatch(OpCodes.Ldfld, conditionDescriptionPos),
+                new CodeMatch(OpCodes.Stloc_0));
+            matcher.Advance(1);
+
+            Localyssation.logger.LogDebug($"matcher Pos={matcher.Pos}, Opcode={matcher.Opcode}, Remaining={matcher.Remaining}");
+
+			matcher.InsertAndAdvance(
+                new CodeInstruction(OpCodes.Ldarg_0),
+                Transpilers.EmitDelegate<Func<string, ScriptableStatusCondition, string>>(
+                    (src, instance) =>
+                    {
+                        var description = Localyssation.GetString(KeyUtil.GetForAsset(instance) + "_DESCRIPTION");
+                        Localyssation.logger.LogDebug($"Description of {instance.name}");
+                        Localyssation.logger.LogDebug($"Replaced condition description: '{src}' -> '{description}'");
+                        return description;
+					}));
+
+			Localyssation.logger.LogDebug($"matcher Pos={matcher.Pos}, Opcode={matcher.Opcode}, Remaining={matcher.Remaining}");
+            matcher.InstructionEnumeration().LogInstructions();
+
+			return matcher.InstructionEnumeration();
+        }
+
+		//[HarmonyPatch(typeof(ScriptableStatusCondition), nameof(ScriptableStatusCondition.Generate_ConditionDescriptor))]
+        //[HarmonyPrefix]
         public static bool ScriptableStatusCondition__Generate_ConditionDescriptor__Prefix(
             ScriptableStatusCondition __instance,
             StatStruct _parentStatStruct,
@@ -339,7 +374,10 @@ namespace Localyssation.Patches.ReplaceText
 			ref string __result)
         {
             string conditionDescription = Localyssation.GetString(KeyUtil.GetForAsset(__instance) + "_DESCRIPTION");
-            int num = __instance.Get_ConditionPower(_parentStatStruct, _attribute, _setPower, _setDuration);
+            Localyssation.logger.LogDebug(__instance.name);
+            Localyssation.logger.LogDebug($"result-src: {conditionDescription}");
+
+			int num = __instance.Get_ConditionPower(_parentStatStruct, _attribute, _setPower, _setPercent);
             var stat = __instance._statStruct;
             __result = conditionDescription.Replace("$BASEPOWER", $"<color=yellow>{num}</color>")
                 .Replace("$APPLY_HEALTH", AsString(num * __instance._applyHealth))
@@ -367,15 +405,59 @@ namespace Localyssation.Patches.ReplaceText
 				.Replace("$RATE", string.Format(Localyssation.GetString(I18nKeys.ScriptableStatusCondition.RATE_FORMAT), _setRepeatRate));
             if (_setDuration > 0f)
             {
-                __result += $" <color=yellow>Lasts for {_setDuration} sec</color>.";
-            }
+                var duration =
+                    string.Format(Localyssation.GetString(
+                        I18nKeys.ScriptableStatusCondition.DURATION_FORMAT),
+                        _setDuration);
+				__result += $" <color=yellow>{duration}</color>.";
+			}
+
+            Localyssation.logger.LogDebug($@"
+parent-attack: {_parentStatStruct._attackPower}
+parent-magic: {_parentStatStruct._magicPower}
+parent-dex: {_parentStatStruct._dexPower}
+parent-health: {_parentStatStruct._maxHealth}
+attribute: {_attribute}
+setPower: {_setPower}
+setPercent: {_setPercent}
+basePower: {num}
+applyHealth: {__instance._applyHealth}
+num*applyHealth: {num * __instance._applyHealth}
+maxHealth: {stat._maxHealth}
+maxMana: {stat._maxMana}
+maxStamina: {stat._maxStamina}
+experience: {stat._experience}
+attackPower: {stat._attackPower}
+magicPower: {stat._magicPower}
+dexPower: {stat._dexPower}
+defense: {stat._defense}
+magicDefense: {stat._magicDefense}
+criticalRate: {stat._criticalRate}
+magicCriticalRate: {stat._magicCriticalRate}
+evasion: {stat._evasion}
+fireResist: {stat._fireResist}
+waterResist: {stat._waterResist}
+natureResist: {stat._natureResist}
+earthResist: {stat._earthResist}
+holyResist: {stat._holyResist}
+shadowResist: {stat._shadowResist}
+damageAbsorbtionAmount: {__instance._damageAbsorbtionAmount}
+moveSpeedPercentChange: {__instance._movSpeedPercentChange}
+");
+            Localyssation.logger.LogDebug($"result-dst: {__result}");
 			return false;
 
             string AsString(int source) => $"<color=yellow>{Mathf.Abs(source)}</color>";
 
             string AsFloatString(float source) => $"<color=yellow>{Mathf.Abs(source):N2}%</color>";
 
-            int GetStat(int source) => __instance.StatCalculate(_parentStatStruct, _attribute, source, _setPower, _setPercent);
+            int GetStat(int source)
+            {
+                var result = __instance.StatCalculate(_parentStatStruct, _attribute, source,
+                    _setPower, _setPercent);
+                Localyssation.logger.LogDebug($"calc({nameof(_parentStatStruct)}, {_attribute}, {source}, {_setPower}, {_setPercent}) = {result}");
+                return result;
+            }
 
             float GetFloatStat(float source)
             {
@@ -389,7 +471,42 @@ namespace Localyssation.Patches.ReplaceText
         }
 
         [HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_ConditionRankInfo))]
-        [HarmonyPrefix]
+        [HarmonyTranspiler]
+        public static IEnumerable<CodeInstruction> SkillToolTip__Apply_ConditionRankInfo__Transpiler(
+            IEnumerable<CodeInstruction> instructions)
+        {
+            var matcher = new CodeMatcher(instructions);
+            matcher.MatchForward(true,
+                new CodeMatch(OpCodes.Ldfld,
+                    AccessTools.Field(typeof(ScriptableCondition),
+                        nameof(ScriptableCondition._conditionName))))
+                .Advance(1);
+
+            matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_0),
+                Transpilers.EmitDelegate<Func<string, ScriptableCondition, string>>((
+                    src,
+                    condition) => Localyssation.GetString(KeyUtil.GetForAsset(condition) + "_NAME")));
+
+            matcher.MatchForward(true,
+                new CodeMatch(OpCodes.Ldfld,
+                    AccessTools.Field(typeof(ScriptableConditionGroup),
+                        nameof(ScriptableConditionGroup._conditionGroupTag))))
+                .Advance(1);
+
+            matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_0),
+                Transpilers.EmitDelegate<Func<string, ScriptableCondition, string>>((
+                    src,
+                    condition) => Localyssation.GetString(KeyUtil.GetForAsset(condition._conditionGroup) + "_NAME")));
+
+            matcher.InstructionEnumeration().LogInstructions("Apply_ConditionRankInfo");
+
+			return RTUtil.SimpleStringReplaceTranspiler(matcher.InstructionEnumeration(), new[] {
+                I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CANCEL_ON_HIT
+            });
+		}
+
+		//[HarmonyPatch(typeof(SkillToolTip), nameof(SkillToolTip.Apply_ConditionRankInfo))]
+        //[HarmonyPrefix]
         public static bool SkillToolTip__Apply_ConditionRankInfo__Prefix(SkillToolTip __instance)
         {
             if (__instance._scriptSkill._skillRankParams._selfConditionOutput == null) return false;
