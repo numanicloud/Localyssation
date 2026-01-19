@@ -1,13 +1,9 @@
 ﻿using HarmonyLib;
-using HarmonyLib.Tools;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading.Tasks;
-using UnityEngine;
 
 namespace Localyssation.Patches
 {
@@ -217,8 +213,13 @@ namespace Localyssation.Patches
         {
             return ReplaceParamsStack(
                 matcher.MatchForward(true, MatchMethodCall(method, opcode)), _ILCodeLength);
-                
         }
+
+        public static CodeMatch LdfldMatch(this MemberInfo fieldInfo)
+            => new CodeMatch(OpCodes.Ldfld, fieldInfo);
+
+        public static CodeInstruction LdfldInstruction(this MemberInfo fieldInfo)
+            => new CodeInstruction(OpCodes.Ldfld, fieldInfo);
     }
 
     struct ILCodeReplacement
@@ -232,7 +233,5 @@ namespace Localyssation.Patches
             this.replacement = replacement;
         }
     }
-
-    
 
 }

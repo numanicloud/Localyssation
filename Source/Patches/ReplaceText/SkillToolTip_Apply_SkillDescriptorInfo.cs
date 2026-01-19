@@ -3,17 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text.RegularExpressions;
 using HarmonyLib;
 using Localyssation.Util;
 
 namespace Localyssation.Patches.ReplaceText
 {
     [HarmonyPatch]
-    public class SkillToolTip_Apply_SkillDescriptorInfo
+    public sealed class SkillToolTip_Apply_SkillDescriptorInfo
     {
-        private static readonly Regex WeaponRequirementPattern = new Regex(@"Requires a (.+)\.");
-
         [HarmonyTargetMethod]
         public static MethodBase TargetMethod()
         {
@@ -108,58 +105,50 @@ namespace Localyssation.Patches.ReplaceText
 		private static void PatchWeaponRequirement(CodeMatcher matcher)
         {
             Localyssation.logger.LogDebug($"Patching weapon requirement");
-            matcher.MatchForward(true,
-                    new CodeMatch(x => x.opcode == OpCodes.Ldstr && ((string)x.operand).Contains(" <color=yellow>Requires a ")))
-                .Repeat(match =>
-                {
-                    Localyssation.logger.LogDebug($"weapon requirement matched");
-                    match.Advance(1)
-                        .InsertAndAdvance(Transpilers.EmitDelegate<Func<string, string>>(origin =>
-                        {
-                            var regexMatch = WeaponRequirementPattern.Match(origin);
-                            if (!regexMatch.Success) return origin;
 
-                            var weaponType = regexMatch.Groups[1].Value;
-                            Localyssation.logger.LogDebug($"weapon type matched: {weaponType}, in {origin}");
-							var requirement = AlterWeaponRequirement(weaponType);
-							return string.Format(
-                                Localyssation.GetString(I18nKeys.SkillMenu
-                                    .TOOLTIP_REQUIEMENT_FORMAT),
-                                requirement);
-                        }));
-                });
-        }
-
-        private static string AlterWeaponRequirement(string weaponType)
-        {
-            switch (weaponType)
+            var replacements = new Dictionary<string, Func<string>>()
             {
-            case "shield":
-                return Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIRE_SHIELD);
-            case "melee weapon":
-                return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.MELEE));
-            case "heavy melee weapon":
-                return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.HEAVY_MELEE));
-            case "ranged weapon":
-                return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.RANGED));
-            case "heavy ranged weapon":
-                return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.HEAVY_RANGED));
-            case "magic weapon":
-                return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.MAGIC));
-            case "heavy magic weapon":
-                return Localyssation.GetString(KeyUtil.GetForAsset(SkillToolTipRequirement.HEAVY_MAGIC));
-            default:
-                return KeyUtil.GetForAsset(SkillToolTipRequirement.NONE);
+                { Format("shield"), () => Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIRE_SHIELD) },
+                { Format("melee weapon"), () => Localize(SkillToolTipRequirement.MELEE) },
+                { Format("heavy melee weapon"), () => Localize(SkillToolTipRequirement.HEAVY_MELEE) },
+                { Format("ranged weapon"), () => Localize(SkillToolTipRequirement.RANGED) },
+                { Format("heavy ranged weapon"), () => Localize(SkillToolTipRequirement.HEAVY_RANGED) },
+                { Format("magic weapon"), () => Localize(SkillToolTipRequirement.MAGIC) },
+                { Format("heavy magic weapon"), () => Localize(SkillToolTipRequirement.HEAVY_MAGIC) },
+                // ↓ 追加効果確率。WeaponRequirementではないが都合がいいので。
+                {
+                    "\n\n<color=cyan>{0} - ({1}) ({2}% Chance)</color>",
+                    () => Localyssation.GetString(
+                        I18nKeys.SkillMenu.TOOLTIP_DESCRIPTOR_CONDITION_CHANCE)
+                }
+            };
+            foreach (var replacement in replacements)
+            {
+                matcher.Start();
+                matcher.MatchForward(true,
+                        new CodeMatch(OpCodes.Ldstr, replacement.Key))
+                    .Advance(1)
+                    .InsertAndAdvance(Transpilers.EmitDelegate<Func<string, string>>(
+                        original => replacement.Value.Invoke()));
+            }
+            return;
+
+			string Format(string weaponTypeName) => $" <color=yellow>Requires a {weaponTypeName}.</color>";
+            string Localize(SkillToolTipRequirement requirement)
+            {
+                return string.Format(
+                    Localyssation.GetString(I18nKeys.SkillMenu.TOOLTIP_REQUIEMENT_FORMAT),
+                    Localyssation.GetString(KeyUtil.GetForAsset(requirement)));
             }
         }
 
-		private static void PatchConditionName(CodeMatcher matcher)
+        private static void PatchConditionName(CodeMatcher matcher)
         {
             Localyssation.logger.LogDebug($"Patching conditionName");
             matcher.MatchForward(true,
-                    new CodeMatch(OpCodes.Ldfld,
-                        AccessTools.Field(typeof(ScriptableCondition),
-                            nameof(ScriptableCondition._conditionName))))
+                    MemberAccessor<ScriptableCondition>
+                        .GetFieldInfo(x => x._conditionName)
+                        .LdfldMatch())
                 .Repeat(cm =>
                 {
                     Localyssation.logger.LogDebug($"conditionName matched");
@@ -181,18 +170,18 @@ namespace Localyssation.Patches.ReplaceText
         {
             Localyssation.logger.LogDebug($"Patching conditionGroupTag");
             matcher.MatchForward(true,
-                    new CodeMatch(OpCodes.Ldfld,
-                        AccessTools.Field(typeof(ScriptableConditionGroup),
-                            nameof(ScriptableConditionGroup._conditionGroupTag))))
+					MemberAccessor<ScriptableConditionGroup>
+                        .GetFieldInfo(x => x._conditionGroupTag)
+                        .LdfldMatch())
                 .Repeat(cm =>
                 {
                     Localyssation.logger.LogDebug($"conditionGroupTag matched");
                     cm.Advance(1)
                         .InsertAndAdvance(
                             new CodeInstruction(OpCodes.Ldloc_1),
-                            new CodeInstruction(OpCodes.Ldfld,
-                                AccessTools.Field(typeof(ScriptableCondition),
-                                    nameof(ScriptableCondition._conditionGroup))),
+							MemberAccessor<ScriptableCondition>
+                                .GetFieldInfo(x => x._conditionGroup)
+                                .LdfldInstruction(),
                             EmitConditionGroupLocalization());
                 });
         }
