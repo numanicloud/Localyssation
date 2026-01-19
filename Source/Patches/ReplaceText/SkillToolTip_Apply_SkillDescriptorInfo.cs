@@ -54,7 +54,7 @@ namespace Localyssation.Patches.ReplaceText
 
         private static void PatchStringReplace(CodeMatcher matcher)
         {
-            Localyssation.logger.LogDebug($"Patching string.Replace");
+            Localyssation.LogDebug($"Patching string.Replace");
             matcher.MatchForward(true,
                     new CodeMatch(OpCodes.Callvirt,
                         AccessTools.Method(
@@ -67,7 +67,7 @@ namespace Localyssation.Patches.ReplaceText
                         new CodeMatch(OpCodes.Ldstr), // 置換変数名
                         new CodeMatch(OpCodes.Ldstr));  // フォーマット文字列
                     var varName = cm.Operand.ToString();
-                    Localyssation.logger.LogDebug($"Replace({varName}, %) matched");
+                    Localyssation.LogDebug($"Replace({varName}, %) matched");
 
                     cm.Advance(2)
                         .InsertAndAdvance(
@@ -104,7 +104,7 @@ namespace Localyssation.Patches.ReplaceText
 
 		private static void PatchWeaponRequirement(CodeMatcher matcher)
         {
-            Localyssation.logger.LogDebug($"Patching weapon requirement");
+            Localyssation.LogDebug($"Patching weapon requirement");
 
             var replacements = new Dictionary<string, Func<string>>()
             {
@@ -144,14 +144,14 @@ namespace Localyssation.Patches.ReplaceText
 
         private static void PatchConditionName(CodeMatcher matcher)
         {
-            Localyssation.logger.LogDebug($"Patching conditionName");
+            Localyssation.LogDebug($"Patching conditionName");
             matcher.MatchForward(true,
                     MemberAccessor<ScriptableCondition>
                         .GetFieldInfo(x => x._conditionName)
                         .LdfldMatch())
                 .Repeat(cm =>
                 {
-                    Localyssation.logger.LogDebug($"conditionName matched");
+                    Localyssation.LogDebug($"conditionName matched");
                     cm.Advance(1)
                         .InsertAndAdvance(
                             new CodeInstruction(OpCodes.Ldloc_1),
@@ -168,14 +168,14 @@ namespace Localyssation.Patches.ReplaceText
 
 		private static void PatchConditionGroupTag(CodeMatcher matcher)
         {
-            Localyssation.logger.LogDebug($"Patching conditionGroupTag");
+            Localyssation.LogDebug($"Patching conditionGroupTag");
             matcher.MatchForward(true,
 					MemberAccessor<ScriptableConditionGroup>
                         .GetFieldInfo(x => x._conditionGroupTag)
                         .LdfldMatch())
                 .Repeat(cm =>
                 {
-                    Localyssation.logger.LogDebug($"conditionGroupTag matched");
+                    Localyssation.LogDebug($"conditionGroupTag matched");
                     cm.Advance(1)
                         .InsertAndAdvance(
                             new CodeInstruction(OpCodes.Ldloc_1),

@@ -273,6 +273,13 @@ namespace Localyssation
                 result = "";
             return result;
         }
+
+        public static void LogDebug(object data)
+        {
+#if DEBUG
+            logger.LogDebug(data);
+#endif
+		}
     }
 
 

@@ -16,7 +16,7 @@ namespace Localyssation.Util
 				sb.AppendLine($"{index}: {instr}");
 				index++;
 			}
-			Localyssation.logger.LogDebug(sb.ToString());
+			Localyssation.LogDebug(sb.ToString());
 		}
 	}
 }

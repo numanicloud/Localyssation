@@ -58,12 +58,10 @@ namespace Localyssation.Patches.ReplaceText
         [HarmonyPostfix]
         public static void ItemMenuCell__Init_ItemPromptWindow__Postfix(ItemMenuCell __instance, ItemListDataEntry _listEntry)
         {
-
-
             foreach (var kvPair in I18nKeys.TabMenu.CELL_ITEMS_PROMPT_BUTTONS)
             {
                 string key = $"_{kvPair.Key}Button";
-                Localyssation.logger.LogDebug(key);
+                Localyssation.LogDebug(key);
                 key = key.Replace("transmogrify", "transmog");
                 var info = typeof(ItemMenuCell).GetField(key, BindingFlags.NonPublic | BindingFlags.Instance);
                 Button button = (Button)(info.GetValue(__instance));

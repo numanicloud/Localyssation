@@ -135,7 +135,7 @@ namespace Localyssation.Patches.ReplaceText
                 .RemoveInstructions(5) // 移除5条旧指令
                 .Insert(newInstructions); // 插入新指令
 
-            Localyssation.logger.LogDebug("成功注入自定义装备消息转换");
+            Localyssation.LogDebug("成功注入自定义装备消息转换");
 
             return matcher.InstructionEnumeration();
         }
