@@ -1,9 +1,16 @@
+## 2.4.0
+- Updates following ATLYSS 12026.a3
+  - Handling changes for text objects
+  - Structure changes for tooltip status 
+- Functional Changes
+  - Debug-level logs are no longer output on the user's end
+
 ## 2.3.1
 - Function restoration
   - The text in the chat window now uses a custom font.
   - The dialog that may appear when trading with merchants will be translated.
 - Bug fix
-	- Fixed issue with incomprehensible chat logs when accepting certain quests.
+  - Fixed issue with incomprehensible chat logs when accepting certain quests.
 
 ## 2.3.0
 - Updated the mod for ATLYSS 112025.a3
