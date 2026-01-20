@@ -172,11 +172,6 @@ namespace Localyssation.Patches.ReplaceText
                     case QuestSubType.CLASS:
                         __instance._slotTag.text = $"<color=#f7e98e>{questName}</color>\n<color=#f7e98e>{Localyssation.GetString("QUEST_TYPE_CLASS", null, fontSize)}</color>";
                         break;
-                        // No more QuestSubType.MASTERY
-                        //case QuestSubType.MASTERY:
-                        //    __instance._slotTag.text = $"<color=#f7e98e>{questName}</color>\n<color=#f7e98e>{Localyssation.GetString("QUEST_TYPE_MASTERY", null, fontSize)}</color>";
-                        //    break;
-
                 }
             }
             else
@@ -218,51 +213,64 @@ namespace Localyssation.Patches.ReplaceText
                 Localyssation.GetString(formatKey, fontSize: fontSize),
                 Localyssation.GetString(creepKey, fontSize: fontSize));
         }
+
         [HarmonyPatch(typeof(QuestTrackElement), nameof(QuestTrackElement.Update_QuestTrackElement))]
         [HarmonyPostfix]
         public static void QuestTrackElement_Handle_QuestTrackInfo(QuestTrackElement __instance)
         {
-            var key = KeyUtil.GetForAsset(__instance._scriptQuest);
-            if (!string.IsNullOrEmpty(__instance._scriptQuest._questName))
-                __instance._trackQuestNameText.text = __instance._trackQuestNameText.text.Replace(__instance._scriptQuest._questName, Localyssation.GetString($"{key}_NAME", __instance._scriptQuest._questName, __instance._trackQuestNameText.fontSize));
+            var quest = __instance._scriptQuest;
+            var key = KeyUtil.GetForAsset(quest);
+            if (!string.IsNullOrEmpty(quest._questName))
+            {
+                var trackQuestName = __instance._trackQuestNameText;
+                trackQuestName.text = trackQuestName.text.Replace(
+                    quest._questName,
+                    Localyssation.GetString($"{key}_NAME",
+                        quest._questName,
+                        trackQuestName.fontSize));
+            }
 
             var playerQuesting = Player._mainPlayer.GetComponent<PlayerQuesting>();
-            if (playerQuesting._questProgressData.Count > 0)
+            if (playerQuesting._questProgressData.Count <= 0) return;
+
+            var questProgressData = playerQuesting._questProgressData[__instance._questIndex];
+
+            var trackElementText = __instance._trackElementText.text.Split(new string[] { "\n" }, StringSplitOptions.None);
+            var c = 0;
+            var fontSize = __instance._trackElementText.fontSize;
+            void ReplaceTrackElementText(string newText, int progressCurrent, int progressMax)
             {
-                var questProgressData = playerQuesting._questProgressData[__instance._questIndex];
-
-                var trackElementText = __instance._trackElementText.text.Split(new string[] { "\n" }, StringSplitOptions.None);
-                var c = 0;
-                var fontSize = __instance._trackElementText.fontSize;
-                void ReplaceTrackElementText(string newText, int progressCurrent, int progressMax)
-                {
-                    var styleTag = trackElementText[c].Substring(0, trackElementText[c].IndexOf(">") + 1);
-                    var formattedQuestString = string.Format(
-                        Localyssation.GetString("FORMAT_QUEST_PROGRESS", fontSize: fontSize),
-                        newText, progressCurrent, progressMax);
-                    trackElementText[c] = styleTag + formattedQuestString + "</color>";
-                    c++;
-                }
-
-                for (var i = 0; i < __instance._scriptQuest._questObjective._questItemRequirements.Length; i++)
-                {
-                    var questItemRequirement = __instance._scriptQuest._questObjective._questItemRequirements[i];
-                    var itemKey = $"{KeyUtil.GetForAsset(questItemRequirement._questItem)}_NAME";
-                    ReplaceTrackElementText(Localyssation.GetString(itemKey, questItemRequirement._questItem._itemName, fontSize), questProgressData._itemProgressValues[i], questItemRequirement._itemsNeeded);
-                }
-                for (var i = 0; i < __instance._scriptQuest._questObjective._questCreepRequirements.Length; i++)
-                {
-                    var questCreepRequirement = __instance._scriptQuest._questObjective._questCreepRequirements[i];
-                    ReplaceTrackElementText(GetCreepKillRequirementText(questCreepRequirement._questCreep, questCreepRequirement._creepsKilled, fontSize), questProgressData._creepKillProgressValues[i], questCreepRequirement._creepsKilled);
-                }
-                for (var i = 0; i < __instance._scriptQuest._questObjective._questTriggerRequirements.Length; i++)
-                {
-                    var questTriggerRequirement = __instance._scriptQuest._questObjective._questTriggerRequirements[i];
-                    ReplaceTrackElementText($"{Localyssation.GetString("QUEST_TRIGGER_REQUIREMENT_PREFIX_" + KeyUtil.Normalize(questTriggerRequirement._prefix), questTriggerRequirement._prefix, fontSize)} {Localyssation.GetString("QUEST_TRIGGER_REQUIREMENT_SUFFIX_" + KeyUtil.Normalize(questTriggerRequirement._suffix), questTriggerRequirement._suffix, fontSize)}", questProgressData._triggerProgressValues[i], questTriggerRequirement._triggerEmitsNeeded);
-                }
-
-                __instance._trackElementText.text = string.Join("\n", trackElementText);
+                var styleTag = trackElementText[c].Substring(0, trackElementText[c].IndexOf(">") + 1);
+                var formattedQuestString = string.Format(
+                    Localyssation.GetString("FORMAT_QUEST_PROGRESS", fontSize: fontSize),
+                    newText, progressCurrent, progressMax);
+                trackElementText[c] = styleTag + formattedQuestString + "</color>";
+                c++;
             }
+
+            var scriptQuestQuestObjective = quest._questObjective;
+            for (var i = 0; i < scriptQuestQuestObjective._questItemRequirements.Length; i++)
+            {
+                var questItemRequirement = scriptQuestQuestObjective._questItemRequirements[i];
+                var itemKey = $"{KeyUtil.GetForAsset(questItemRequirement._questItem)}_NAME";
+                ReplaceTrackElementText(Localyssation.GetString(itemKey, questItemRequirement._questItem._itemName, fontSize), questProgressData._itemProgressValues[i], questItemRequirement._itemsNeeded);
+            }
+            for (var i = 0; i < scriptQuestQuestObjective._questCreepRequirements.Length; i++)
+            {
+                var questCreepRequirement = scriptQuestQuestObjective._questCreepRequirements[i];
+                ReplaceTrackElementText(GetCreepKillRequirementText(questCreepRequirement._questCreep, questCreepRequirement._creepsKilled, fontSize), questProgressData._creepKillProgressValues[i], questCreepRequirement._creepsKilled);
+            }
+            for (var i = 0; i < scriptQuestQuestObjective._questTriggerRequirements.Length; i++)
+            {
+                var questTriggerRequirement = scriptQuestQuestObjective._questTriggerRequirements[i];
+                var prefix = Localyssation.GetString("QUEST_TRIGGER_REQUIREMENT_PREFIX_" + KeyUtil.Normalize(questTriggerRequirement._prefix), questTriggerRequirement._prefix, fontSize);
+                var suffix = Localyssation.GetString("QUEST_TRIGGER_REQUIREMENT_SUFFIX_" + KeyUtil.Normalize(questTriggerRequirement._suffix), questTriggerRequirement._suffix, fontSize);
+                ReplaceTrackElementText($"{prefix} {suffix}",
+                    questProgressData._triggerProgressValues[i], 
+                    questTriggerRequirement._triggerEmitsNeeded);
+            }
+
+            __instance._trackElementText.text = string.Join("\n", trackElementText);
         }
 
         [HarmonyPatch(typeof(QuestSelectionManager), nameof(QuestSelectionManager.OnClick_QuestAcceptButton))]
@@ -350,7 +358,11 @@ namespace Localyssation.Patches.ReplaceText
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            var matcher = new CodeMatcher(instructions)
+			// FIXME: Its only for replace "{} {}: {}/{}" into "{0}: {1}/{2}".
+			// It should be done by modifying the top of the call stack instead of this hacky way.
+            // And, result is same as original because {0} is "{} {}".
+
+			var matcher = new CodeMatcher(instructions)
                 .MatchForward(true,
                     MemberAccessor<ScriptableQuest>.GetFieldInfo(x => x._questObjective)
                         .LdfldMatch(),
@@ -371,16 +383,16 @@ namespace Localyssation.Patches.ReplaceText
                 new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldarg_2),
                 new CodeInstruction(OpCodes.Ldloc, questTriggerRequirement_pos),
-                Transpilers.EmitDelegate<Func<string, PlayerQuesting, ScriptableQuest, int, QuestTriggerRequirement, string>>((oldString, __instance, quest, questIndex, questTriggerRequirement) =>
+                Transpilers.EmitDelegate<Func<string, PlayerQuesting, ScriptableQuest, int, QuestTriggerRequirement, string>>((oldString, __instance, quest, questIndex, triggerRequirement) =>
                 {
-                    var questTriggerRequirementIndex = Array.IndexOf(quest._questObjective._questTriggerRequirements, questTriggerRequirement);
+                    var questTriggerRequirementIndex = Array.IndexOf(quest._questObjective._questTriggerRequirements, triggerRequirement);
                     return string.Format(
                         Localyssation.GetString(
                             I18nKeys.Quest.FORMAT_PROGRESS,
-                            $"{questTriggerRequirement._prefix} {questTriggerRequirement._suffix}"),
-                        $"{questTriggerRequirement._prefix} {questTriggerRequirement._suffix}",
+                            $"{triggerRequirement._prefix} {triggerRequirement._suffix}"),
+                        $"{triggerRequirement._prefix} {triggerRequirement._suffix}",
                         __instance._questProgressData[questIndex]._triggerProgressValues[questTriggerRequirementIndex],
-                        questTriggerRequirement._triggerEmitsNeeded);
+                        triggerRequirement._triggerEmitsNeeded);
                 }));
 
             return matcher.InstructionEnumeration();
@@ -393,7 +405,8 @@ namespace Localyssation.Patches.ReplaceText
         [HarmonyTargetMethod]
         public static MethodBase TargetMethod()
         {
-            return AccessTools.GetDeclaredMethods(typeof(PlayerQuesting))
+			// target: <Target_Query_CreepKillProgress>g__Iterate_ScriptableQuest|26_0
+			return AccessTools.GetDeclaredMethods(typeof(PlayerQuesting))
                 .Where(methodInfo => methodInfo.Name.Contains($"<{nameof(PlayerQuesting.Target_Query_CreepKillProgress)}>g__"))
                 .Cast<MethodBase>()
                 .FirstOrDefault();
@@ -402,7 +415,9 @@ namespace Localyssation.Patches.ReplaceText
         [HarmonyTranspiler]
         public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            var matcher = new CodeMatcher(instructions)
+			// FIXME: Its only for replace "{} {}: {}/{}" into "localize(creepName) localize(slain): {}/{}".
+
+			var matcher = new CodeMatcher(instructions)
                 .MatchForward(true,
                     new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(ScriptableQuest), nameof(ScriptableQuest._questObjective))),
                     new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(QuestObjective), nameof(QuestObjective._questCreepRequirements))),
