@@ -352,8 +352,10 @@ namespace Localyssation.Patches.ReplaceText
         {
             var matcher = new CodeMatcher(instructions)
                 .MatchForward(true,
-                    new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(ScriptableQuest), nameof(ScriptableQuest._questObjective))),
-                    new CodeMatch(OpCodes.Ldfld, AccessTools.Field(typeof(QuestObjective), nameof(QuestObjective._questTriggerRequirements))),
+                    MemberAccessor<ScriptableQuest>.GetFieldInfo(x => x._questObjective)
+                        .LdfldMatch(),
+                    MemberAccessor<QuestObjective>.GetFieldInfo(x => x._questTriggerRequirements)
+                        .LdfldMatch(),
                     new CodeMatch(),
                     new CodeMatch(),
                     new CodeMatch(x => x.IsStloc()));
