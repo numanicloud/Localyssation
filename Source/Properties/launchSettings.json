@@ -2,9 +2,9 @@
   "profiles": {
     "Mod": {
       "commandName": "Executable",
-      "executablePath": "D:\\SteamLibrary\\steamapps\\common\\ATLYSS\\ATLYSS.exe",
-      "commandLineArgs": "--doorstop-enable true --doorstop-target \"D:\\SteamLibrary\\steamapps\\common\\ATLYSS\\BepInEx\\core\\BepInEx.Preloader.dll\"",
-      "workingDirectory": "D:\\SteamLibrary\\steamapps\\common\\ATLYSS",
+      "executablePath": "$(ATLYSS)\\ATLYSS.exe",
+      "commandLineArgs": "--doorstop-enable true --doorstop-target \"$(ATLYSS_BEPINEX)\\BepInEx.Preloader.dll\"",
+      "workingDirectory": "$(ATLYSS)",
       "nativeDebugging": false
     }
   }
