@@ -2,7 +2,39 @@
 
 ## これから開発を始める人へ
 
+NumAniCloudより：
+筆者はあなたの行動力を尊敬します。困ったときにドキュメントが役に立てば幸いです。Moddingは危険と不確実さが伴い、セーブデータのバックアップがとても重要であることを再確認し、始めましょう。
 
+### プロジェクト設定
+
+`Source/Localyssation.csproj` を編集し、あなたの環境に合った設定にする必要がある。さもないと、ビルドに必要なライブラリへの参照が足りない。
+
+|環境変数名|意味|
+|-|-|
+|$(ATLYSS)|`ATLYSS.exe` があるATLYSSゲームフォルダ|
+|$(ATLYSS_BEPINEX)|BepInExに含まれるdllがあるフォルダ|
+|$(ATLYSS_BEPINEX_PLUGINS)|BepInExがロードするプラグインを配置するフォルダ|
+
+もしかすると、EasySettingsのインストール場所も編集する必要があるかもしれない（そうならないよう準備しておいてほしい）：
+```xml
+<!-- Mod assemblies. -->
+<ItemGroup>
+    <Reference Include="EasySettings">
+        <!-- ↓ここに EasySettings.dll へのパスを書く -->
+        <HintPath>$(ATLYSS_BEPINEX_PLUGINS)\EasySettings.dll</HintPath>
+        <Private>False</Private>
+    </Reference>
+</ItemGroup>
+```
+
+### リリースビルドの性質
+
+設定により、DebugビルドとReleaseビルドとでは性質が異なる。Releaseビルドでは：
+
+- 最適化されたdllが作成される。
+- `Localyssation.LogDebug(object)` はログを出力しない。ユーザー配布に適する。
+    - `Localyssation.logger.LogDebug(object)` ではログを出力するので注意。
+- ビルド時に配布用のzipを作成する。`dist` フォルダに作られる。
 
 ## BepInEx について
 
@@ -10,7 +42,7 @@ BepInExはUnityゲームのアセンブリを変更することでMODの開発�
 本体ゲームの特定のメソッドが呼ばれる直前・直後に呼ばれるメソッドを定義する事ができる。
 あるいは、ILを直接読み取り、置換することで実行される処理を書き換える事ができる。
 
-## よく使うテクニック
+## TIPS
 
 必要があれば、実行時のスタックの状態を以下のように書き表すことにする。
 この例はスタックのトップに "hoge" があり、その下に向かって 0, 9, go(GameObject) と続くことを意味する。
