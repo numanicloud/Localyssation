@@ -1,4 +1,5 @@
-﻿using BepInEx;
+﻿using System;
+using BepInEx;
 using HarmonyLib;
 using Localyssation.Util;
 using MonoMod.Utils;
@@ -90,7 +91,7 @@ namespace Localyssation.LanguageModule
         public static void UpdateDefaultLanguageFile()
         {
             Directory.CreateDirectory(DefaultLanguage.fileSystemPath);
-            DefaultLanguage.WriteToFileSystem("default_language", true);
+            DefaultLanguage.WriteToFileSystem($"default_language_{MyPluginInfo.ATLYSS_VERSION}", true);
         }
 
         public static string GetDefaultString(string key)

@@ -329,12 +329,14 @@ namespace Localyssation.Patches.ReplaceText
                 Transpilers.EmitDelegate<Func<string, PlayerQuesting, ScriptableQuest, int, QuestItemRequirement, int[], string>>((oldString, __instance, quest, questIndex, questItemRequirement, acquiredItemsArray) =>
                 {
                     var questItemRequirementIndex = Array.IndexOf(quest._questObjective._questItemRequirements, questItemRequirement);
+                    var translated = Localyssation.GetString(
+                        KeyUtil.GetForAsset(questItemRequirement._questItem) + "_NAME");
                     return string.Format(
                         Localyssation.GetString(
                             //"FORMAT_QUEST_PROGRESS",
                             I18nKeys.Quest.FORMAT_PROGRESS,
-                            Localyssation.GetString($"{KeyUtil.GetForAsset(questItemRequirement._questItem)}_NAME")),
-                        Localyssation.GetString(KeyUtil.GetForAsset(questItemRequirement._questItem) + "_NAME"),
+                            translated),
+                        translated,
                         acquiredItemsArray[questItemRequirementIndex],
                         questItemRequirement._itemsNeeded);
                 }));
