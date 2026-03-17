@@ -1,11 +1,9 @@
 # Localyssation
 
-[![Version](https://thunderstore-badges.foreverjlong.workers.dev/Sallys_Workshop/Localyssation/version)](https://thunderstore.io/c/atlyss/p/Sallys_Workshop/Localyssation/)
-[![Downloads](https://thunderstore-badges.foreverjlong.workers.dev/Sallys_Workshop/Localyssation/downloads)](https://thunderstore.io/c/atlyss/p/Sallys_Workshop/Localyssation/)
+[![Version](https://thunderstore-badges.foreverjlong.workers.dev/Jeneration_Technology/LocalyssationJP/version)](https://thunderstore.io/c/atlyss/p/Jeneration_Technology/LocalyssationJP/)
+[![Downloads](https://thunderstore-badges.foreverjlong.workers.dev/Jeneration_Technology/LocalyssationJP/downloads)](https://thunderstore.io/c/atlyss/p/Jeneration_Technology/LocalyssationJP/)
 
-
-
-A work-in-progress localization library mod for [ATLYSS](https://store.steampowered.com/app/2768430/ATLYSS/). Check [Github page](https://github.com/sallys-workshop/Localyssation/) for newest update.
+A work-in-progress localization library mod for [ATLYSS](https://store.steampowered.com/app/2768430/ATLYSS/). Check [Github page](https://github.com/numanicloud/Localyssation) for newest update.
 
 ## Requirements
 
@@ -27,6 +25,7 @@ Currently listed translation patch(es):
 | Español  |    [Alhenix](https://thunderstore.io/c/atlyss/p/Alhenix/)    | [LocalyssationESLA](https://thunderstore.io/c/atlyss/p/Alhenix/localyssationESLA/) |
 |  한국어  | [KR_Kemonoz](https://thunderstore.io/c/atlyss/p/KR_Kemonoz/) | [AtlyssKr](https://thunderstore.io/c/atlyss/p/KR_Kemonoz/AtlyssKr/) |
 |Brasileiro|[Guachenim](https://thunderstore.io/c/atlyss/p/Guachenim/)|[Thunder Store](https://thunderstore.io/c/atlyss/p/Guachenim/Ordem_e_Atlyss_a_Braziliant_PTBR_Translation/)|
+| 日本語 | [gatia](https://gatia.kage-tora.com/index.html) | [すみっこモノづくり](https://gatia.kage-tora.com/atlyss_jp.html) |
 
 ## How to use
 
@@ -52,12 +51,11 @@ Currently listed translation patch(es):
     * `ScriptableQuest.md`: givers, translation keys, types, subtypes, and names
   * Option to show KEY of empty translations in game.
   * Reload strings with hot key in game.
-
+  * Diff tool is availabile that shows the difference between two string.yml files.
 
 ## Report a bug / missing translation
 
-Use issue feature on GitHub please. [Create an Issue](https://github.com/sallys-workshop/Localyssation/issues/new/choose)
-
+Use issue feature on GitHub please.
 
 ## For translators or mod creaters
 
@@ -71,4 +69,6 @@ Also, this mod can't help with the texts inside pictures. Try texture swapping i
 
 ## Credit
 
-Originally created by [TheMysticSword](https://github.com/TheMysticSword/Localyssation), then forked and maintained by [TowardtheStars](https://github.com/TowardtheStars) as part of the CHS translation project held by team **Sally's Workshop**(莎莉小店).
+- Originally created by [TheMysticSword](https://github.com/TheMysticSword/Localyssation),
+- then forked and maintained by [TowardtheStars](https://github.com/TowardtheStars) as part of the CHS translation project by team **Sally's Workshop**(莎莉小店),
+- then further forked and maintained by [numanicloud](https://github.com/numanicloud).
